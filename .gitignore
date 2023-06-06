@@ -16,8 +16,12 @@
 # Explicitly whitelist every .go file in the main directory
 !*.go
 
-# Explicitly whitelist every .go file in all directories
-!**/*.go
+# Explicitly whitelist every .go file in the following directories
+!globals/
+!globals/*.go
+
+!types/
+!types/*.go
 
 # Allow package mamangement files for golang
 !go.mod
