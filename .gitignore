@@ -12,6 +12,7 @@
 
 # Allow every file in the resources folder
 !resources/
+!resources/*
 
 # Explicitly whitelist every .go file in the main directory
 !*.go
