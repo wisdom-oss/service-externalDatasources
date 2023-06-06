@@ -1,0 +1,20 @@
+# Ingore every file in this repository and explicitly whitelist
+# the files that should be inluded.
+*
+
+# Allow the readme and gitignore files
+!README.md
+!.gitignore
+
+# Allow the openapi.yaml file since it contains important information
+# on how to use the service
+!openapi.yaml
+
+# Allow every file in the resources folder
+!resources/
+
+# Explicitly whitelist every .go file in the main directory
+!*.go
+
+# Explicitly whitelist every .go file in all directories
+!**/*.go
