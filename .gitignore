@@ -18,3 +18,7 @@
 
 # Explicitly whitelist every .go file in all directories
 !**/*.go
+
+# Allow package mamangement files for golang
+!go.mod
+!go.sum
