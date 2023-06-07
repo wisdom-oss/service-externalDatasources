@@ -1,20 +1,33 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
 
+	"github.com/qustavo/dotsql"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/rs/zerolog/pkgerrors"
+	"github.com/wisdom-oss/commonTypes"
 
 	"external-api-service/globals"
-	"external-api-service/types"
+
+	_ "github.com/lib/pq"
 )
 
 var l zerolog.Logger
+
+// defaultAuth contains the default authentication configuration if no file
+// is present (which shouldn't be the case). it only allows named users
+// access to this service who use the same group as the service name
+var defaultAuth = wisdomType.AuthorizationConfiguration{
+	Enabled:                   true,
+	RequireUserIdentification: true,
+	RequiredUserGroup:         globals.ServiceName,
+}
 
 // this init functions sets up the logger which is used for this microservice
 func init() {
@@ -61,92 +74,118 @@ func init() {
 		l.Debug().Msg("location for environment config not changed")
 	}
 	l.Info().Str("path", location).Msg("loading environment configuration file")
-	// open the file
-	file, err := os.Open(location)
+	var c wisdomType.EnvironmentConfiguration
+	err := c.PopulateFromFilePath(location)
 	if err != nil {
-		l.Fatal().Err(err).Msg("unable to open environment configuration file")
-	}
-
-	// now parse the configuration file
-	var config types.EnvironmentFile
-	err = json.NewDecoder(file).Decode(&config)
-	if err != nil {
-		l.Fatal().Err(err).Msg("unable to parse environment configuration file")
+		l.Fatal().Err(err).Msg("unable to load environment configuration")
 	}
 	l.Info().Msg("successfully loaded environment configuration")
 
 	// since the configuration was successfully loaded, check the required
 	// environment variables
 	l.Info().Msg("validating configuration against current environment")
-	l.Info().Msg("loading required environment variables")
-	for _, envKey := range config.Required {
-		// overwriting the logger in this loop to make the calls shorter
-		l := l.With().Str("envKey", envKey).Logger()
-		l.Debug().Msg("checking required environment variable")
-		value, envSet := os.LookupEnv(envKey)
-		if !envSet {
-			fileKey := fmt.Sprintf("%s_FILE", envKey)
-			l := l.With().Str("fileKey", fileKey).Logger()
-			l.Warn().Msg("not found in environment. checking for docker secret")
-			filePath, filePathSet := os.LookupEnv(fileKey)
-			if !filePathSet {
-				// since neither the environment variable was set, nor a
-				// docker secret is mapped to the environment variable, stop
-				// the microservice
-				l.Fatal().Msg("environment variable neither set nor supplied as docker secret")
-			}
-			// now check if the filePath is empty
-			filePath = strings.TrimSpace(filePath)
-			if filePath == "" {
-				// since the file path is empty, the environment variable cannot
-				// be read. this also stops the microservice
-				l.Fatal().Msg("docker secret setup found, but filepath is empty")
-			}
-			// now start loading the docker secret contents
-			fileContentBytes, err := os.ReadFile(filePath)
-			if err != nil {
-				l.Fatal().Err(err).Msg("failed to read discovered docker secret")
-			}
-			// now check if the number of read bytes exceeds 0
-			if len(fileContentBytes) == 0 {
-				l.Fatal().Msg("configured docker secret is empty")
-			}
-			// now convert the file contents to a string
-			fileContents := string(fileContentBytes)
-			// now trim the contents
-			fileContents = strings.TrimSpace(fileContents)
-			// now set the file contents as the value for the environment
-			// variable under the envKey
-			globals.Environment[envKey] = fileContents
-			l.Debug().Msg("loaded environment variable from docker secret")
-			continue
-		}
+	globals.Environment, err = c.ParseEnvironment()
+	if err != nil {
+		l.Fatal().Err(err).Msg("error while parsing environment")
+	}
+}
 
-		// trim away any excess whitespaces from the value
-		value = strings.TrimSpace(value)
-		if value == "" {
-			l.Fatal().Msg("required environment variable empty")
-		}
-		// set the value to the environment
-		globals.Environment[envKey] = value
-		l.Debug().Msg("loaded environment variable from real environment")
+// this function now loads the prepared errors from the error file and parses
+// them into wisdom errors
+func init() {
+	l.Info().Msg("loading predefined errors")
+	// check if the error file location was set
+	filePath, isSet := globals.Environment["ERROR_FILE_LOCATION"]
+	if !isSet {
+		l.Fatal().Msg("no error file location set in environment")
+	}
+	// now check if the path is not empty
+	if filePath == "" || strings.TrimSpace(filePath) == "" {
+		l.Fatal().Msg("empty path supplied for error file location")
 	}
 
-	// now read the optional variables
-	l.Info().Msg("checking optional environment variables")
-	for envKey, defaultValue := range config.Optional {
-		l := l.With().Str("envKey", envKey).Str("default", defaultValue).Logger()
-		l.Debug().Msg("loading optional environment variable")
-		availableValue, isSet := os.LookupEnv(envKey)
-		if !isSet {
-			l.Debug().Msg("using default value")
-			globals.Environment[envKey] = defaultValue
-			continue
-		}
-		// trim the available value
-		availableValue = strings.TrimSpace(availableValue)
-		l.Info().Str("suppliedValue", availableValue).Msg("using supplied value")
-		globals.Environment[envKey] = availableValue
+	// since the path is not empty, try to open it
+	file, err := os.Open(filePath)
+	if err != nil {
+		l.Fatal().Err(err).Msg("unable to open error configuration file")
 	}
-	l.Info().Msg("finished processing the environment configuration")
+
+	var errors []wisdomType.WISdoMError
+	err = json.NewDecoder(file).Decode(&errors)
+	if err != nil {
+		l.Fatal().Err(err).Msg("unable to load error configuration file")
+	}
+	for _, e := range errors {
+		e.InferHttpStatusText()
+		globals.Errors = append(globals.Errors, e)
+	}
+	l.Info().Msg("loaded predefined errors")
+}
+
+// this function loads the externally defined authorization configuration
+// and overwrites the default options laid out here
+func init() {
+	l.Info().Msg("loading authorization configuration")
+	filePath, isSet := globals.Environment["AUTH_CONFIG_FILE_LOCATION"]
+	if !isSet {
+		l.Warn().Msg("no auth file location set in environment. using default")
+		globals.AuthorizationConfiguration = defaultAuth
+		return
+	}
+	// now check if the path is not empty
+	if filePath == "" || strings.TrimSpace(filePath) == "" {
+		l.Warn().Msg("empty path supplied for error file location. using default")
+		globals.AuthorizationConfiguration = defaultAuth
+		return
+	}
+
+	// since a file was found, read from the file path
+	var authConfig wisdomType.AuthorizationConfiguration
+	err := authConfig.PopulateFromFilePath(filePath)
+	if err != nil {
+		l.Error().Err(err).Msg("unable to parse authorization configuration. ussing default")
+		globals.AuthorizationConfiguration = defaultAuth
+		return
+	}
+
+	globals.AuthorizationConfiguration = authConfig
+	l.Info().Msg("loaded authorization configuration")
+}
+
+// this function opens a global connection to the postgres database used for
+// this microservice and loads the prepared sql queries.
+func init() {
+	l.Info().Msg("preparing global database connection")
+	// build a dsn from the environment variables
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=wisdom sslmode=disable",
+		globals.Environment["PG_HOST"], globals.Environment["PG_PORT"], globals.Environment["PG_USER"],
+		globals.Environment["PG_PASS"])
+
+	// now open the connection to the database
+	var err error
+	globals.Db, err = sql.Open("postgres", dsn)
+	if err != nil {
+		l.Fatal().Err(err).Msg("failed to open database connection")
+	}
+	l.Info().Msg("opened database connection")
+
+	// now ping the database to check the connectivity
+	l.Info().Msg("pinging the database to verify connectivity")
+	err = globals.Db.Ping()
+	if err != nil {
+		l.Fatal().Err(err).Msg("connectivity verification failed")
+	}
+	l.Info().Msg("database connection verified. open and working")
+
+	// now load the prepared sql queries
+	l.Info().Msg("loading sql queries")
+	globals.SqlQueries, err = dotsql.LoadFromFile(globals.Environment["QUERY_FILE_LOCATION"])
+	if err != nil {
+		l.Fatal().Err(err).Msg("unable to load queries used by the service")
+	}
+}
+
+// this function just logs that the init process is finished
+func init() {
+	l.Info().Msg("finished initialization")
 }

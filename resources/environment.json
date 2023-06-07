@@ -3,7 +3,7 @@
   "optional": {
     "LISTEN_PORT": "8000",
     "PG_PORT": "5432",
-    "SCOPE_FILE_LOCATION": "./scope.json5",
+    "AUTH_CONFIG_FILE_LOCATION": "./authConfig.json",
     "ERROR_FILE_LOCATION": "./errors.json5",
     "QUERY_FILE_LOCATION": "./queries.sql"
   }

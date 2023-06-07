@@ -1,0 +1,5 @@
+{
+  "enableAuth": true,
+  "requireUserID": true,
+  "requiredUserGroup": "external-apis"
+}

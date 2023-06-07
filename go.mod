@@ -3,8 +3,10 @@ module external-api-service
 go 1.20
 
 require (
+	github.com/lib/pq v1.10.9
 	github.com/qustavo/dotsql v1.1.0
 	github.com/rs/zerolog v1.29.1
+	github.com/wisdom-oss/commonTypes v1.0.0
 )
 
 require (
