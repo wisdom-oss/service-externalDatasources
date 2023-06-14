@@ -23,4 +23,4 @@ var AuthorizationConfiguration wisdomType.AuthorizationConfiguration
 var Environment map[string]string = make(map[string]string)
 
 // Errors contains all errors that have been predefined in the "errors.json" file.
-var Errors []wisdomType.WISdoMError
+var Errors map[string]wisdomType.WISdoMError = make(map[string]wisdomType.WISdoMError)

@@ -117,7 +117,7 @@ func init() {
 	}
 	for _, e := range errors {
 		e.InferHttpStatusText()
-		globals.Errors = append(globals.Errors, e)
+		globals.Errors[e.ErrorCode] = e
 	}
 	l.Info().Msg("loaded predefined errors")
 }
