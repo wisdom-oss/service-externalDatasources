@@ -1,3 +1,26 @@
 [
-
+  {
+    "code": "MISSING_NAME",
+    "title": "Missing Name",
+    "description": "The name for the new API is missing",
+    "httpCode": 400
+  },
+  {
+    "code": "MISSING_BASE_URI",
+    "title": "Missing Base URI",
+    "description": "The base URI for the new API is missing",
+    "httpCode": 400
+  },
+  {
+    "code": "INVALID_BASE_URI",
+    "title": "Invalid Base URI",
+    "description": "The base URI for the new API is not valid. It could not be parsed",
+    "httpCode": 400
+  },
+  {
+    "code": "INVALID_URI_SCHEME",
+    "title": "Invalid URI Scheme",
+    "description": "The base URI for the new API is not valid. The service only support HTTP and HTTPS schemes",
+    "httpCode": 400
+  }
 ]

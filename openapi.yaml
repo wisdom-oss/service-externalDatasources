@@ -1,0 +1,50 @@
+openapi: 3.1.0
+info:
+  title: External API Forward-Proxy Server
+  version: 1.0.0
+  summary: |
+    This microservice allows using an external API via a forward proxy server.
+  description: |
+    Using external APIs always is a hassle when it comes to CORS. To circumvent
+    CORS issues, this microservice acts as a forward proxy server. It forwards
+    all requests to the external API, keeping any query parameters and headers.
+    
+    Since some APIs require the usage of an API key or other authentication,
+    the microservice will set those values in the required locations.
+    Currently supported Locations are:
+      - Query Parameters
+      - Headers
+      - Basic Authentication
+    These secrets are stored in the database and can be managed via the API.
+
+tags:
+  - name: Management
+    description: |
+      Management of the proxy targets and secrets
+
+components:
+  requestBodies:
+    NewExternalAPI:
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                description: Public name of the external API
+
+paths:
+  /admin/new:
+    post:
+      summary: |
+        Create a new proxy target
+      description: |
+        Create a new proxy target. The target will be stored in the database
+        and can be used for proxying requests. The target will be validated
+        before it is stored.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object

@@ -24,6 +24,9 @@
 !types/
 !types/*.go
 
+!routes/
+!routes/*.go
+
 # Allow package mamangement files for golang
 !go.mod
 !go.sum
