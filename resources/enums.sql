@@ -20,3 +20,8 @@ CREATE TYPE pricingModel AS ENUM ('openSource', 'free', 'singlePurchase', 'perAc
 -- the enumeration contains the three precision levels available for a
 -- external data source
 CREATE TYPE precisionLevel AS ENUM ('imprecise', 'unusual', 'unusual', 'fine');
+
+-- name: create-enum-delayInformationTransmission
+-- the enumeration contains the type of transmission for information about
+-- delayed data
+CREATE TYPE delayInformationTransmission AS ENUM ('automatic', 'direct', 'manual', 'none');
