@@ -15,3 +15,5 @@ type PricingInformation struct {
 	Model        PricingModel
 	PricePerUnit float64
 }
+
+// TODO: implement conversion/parsing functions

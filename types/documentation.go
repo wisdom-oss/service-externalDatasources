@@ -5,3 +5,5 @@ type Documentation struct {
 	Location  []Tuple
 	Verbosity NoneHighRange
 }
+
+// TODO: implement conversion/parsing functions

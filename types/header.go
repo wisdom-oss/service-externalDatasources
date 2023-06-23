@@ -1,8 +1,8 @@
 package types
 
-type CheckedRange struct {
-	Checked bool
-	Range   NoneHighRange
+type Header struct {
+	Key   string
+	Value string
 }
 
 // TODO: implement conversion/parsing functions

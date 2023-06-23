@@ -8,3 +8,5 @@ const (
 	RANGE_MEDIUM NoneHighRange = "medium"
 	RANGE_HIGH   NoneHighRange = "high"
 )
+
+// TODO: implement conversion/parsing functions
