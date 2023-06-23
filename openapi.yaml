@@ -17,6 +17,13 @@ servers:
     description: Default API Base Path
 
 paths:
+  /:
+    get:
+      summary: Get all available external data sources
+
+    post:
+      summary: Add a new external data source
+
   /{sourceID}:
     parameters:
       - in: path
@@ -33,9 +40,6 @@ paths:
       responses:
         200:
           description: The full information about the data source
-
-    post:
-      summary: Create a new external data source
 
     put:
       summary: replace the current representation of the data source
@@ -59,7 +63,7 @@ paths:
       summary: get all transformations from the database
 
     post:
-      summary: create a new transformation for the source
+      summary: create a new stored transformation for the source
 
   /transformations/{sourceId}/{transformationId}:
     parameters:
@@ -120,7 +124,35 @@ paths:
         Since this endpoint is used to proxy a request to a external service
         the http status codes are also returned from the external response.
         Therefore, this documentation only lists those which may be sent back
-        directly by the service
+        directly by the service.
+        
+        When supplying transformations in the request body the service will
+        only execute those in the request body.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                requestTransformation:
+                  type: object
+                  properties:
+                    order:
+                      type: integer
+                    data:
+                      type: object
+                responseTransformation:
+                  type: object
+                  properties:
+                    order:
+                      type: integer
+                    script:
+                      type: string
+                      format: bytes
+                      description: |
+                        The RScript that shall be used to transform the returned
+                        response
+
       responses:
         200:
           description: | 
