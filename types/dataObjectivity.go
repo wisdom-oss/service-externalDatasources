@@ -5,5 +5,3 @@ type DataObjectivity struct {
 	RawData            bool
 	AutomaticCapture   bool
 }
-
-// TODO: implement conversion/parsing functions

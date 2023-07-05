@@ -4,18 +4,15 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"os"
-	"strings"
-
 	"github.com/qustavo/dotsql"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/rs/zerolog/pkgerrors"
 	"github.com/wisdom-oss/commonTypes"
+	"os"
+	"strings"
 
 	"external-api-service/globals"
-
-	_ "github.com/lib/pq"
 )
 
 var l zerolog.Logger
@@ -58,6 +55,7 @@ func init() {
 	// since now a logging level is set, configure the logger
 	zerolog.SetGlobalLevel(loggingLevel)
 	l = log.With().Str("step", "init").Logger()
+	l.Log().Str("level", loggingLevel.String()).Send()
 }
 
 // this function initializes the environment variables used in this microservice

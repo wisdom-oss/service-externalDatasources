@@ -1,9 +1,23 @@
 package types
 
-type ExternalAPI struct {
-	ID                string            `json:"id" db:"id"`
-	Name              string            `json:"name" db:"name"`
-	BaseURI           string            `json:"baseUri" db:"baseUri"`
-	Description       *string           `json:"description" db:"description"`
-	AdditionalHeaders map[string]string `json:"additionalHeaders" db:"additionalHeaders"`
+type BaseData struct {
+	ID   string `json:"id" db:"id"`
+	Name string `json:"name" db:"name"`
+}
+
+type Metadata struct {
+	ID                  string   `json:"-" db:"id"`
+	DistinctiveFeatures []Tuple  `json:"distinctiveFeatures" db:"distinctive_features"`
+	UsageRights         *string  `json:"usageRights" db:"usage_rights"`
+	UsageDuties         *string  `json:"usageDuties" db:"usage_duties"`
+	RealEntities        []string `json:"realEntities" db:"real_entities"`
+}
+
+type API struct {
+}
+
+type ExternalDataSource struct {
+	BaseData
+	Metadata
+	API
 }

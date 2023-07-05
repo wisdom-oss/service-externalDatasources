@@ -1,6 +1,8 @@
 package globals
 
-import "database/sql"
+import (
+	"database/sql"
+)
 
 // This file contains all globally shared connections (e.g., Databases)
 
