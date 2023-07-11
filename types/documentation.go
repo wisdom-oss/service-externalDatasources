@@ -56,7 +56,6 @@ func (d *Documentations) Scan(src interface{}) error {
 	default:
 		return errors.New("unsupported scan input")
 	}
-	fmt.Println(rowString)
 	entries := strings.Split(rowString, "\",\"")
 	var documentationElements Documentations
 	for idx, entry := range entries {
