@@ -8,8 +8,8 @@ import (
 )
 
 type CheckedRange struct {
-	Checked bool
-	Range   enums.NoneHighRange
+	Checked bool                `json:"checked"`
+	Range   enums.NoneHighRange `json:"range"`
 }
 
 func (cr *CheckedRange) Scan(src interface{}) error {

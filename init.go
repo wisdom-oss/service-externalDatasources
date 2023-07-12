@@ -13,6 +13,8 @@ import (
 	"strings"
 
 	"external-api-service/globals"
+
+	_ "github.com/lib/pq"
 )
 
 var l zerolog.Logger

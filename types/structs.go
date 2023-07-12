@@ -6,27 +6,11 @@ import (
 )
 
 type BaseData struct {
-	ID   string `json:"-" db:"id"`
+	ID   string `json:"id" db:"id"`
 	Name string `json:"name" db:"name"`
 }
 
 type Metadata struct {
-	ID                  string           `json:"-" db:"id"`
-	DistinctiveFeatures []Tuple          `json:"distinctiveFeatures" db:"distinctive_features"`
-	UsageRights         *string          `json:"usageRights" db:"usage_rights"`
-	UsageDuties         *string          `json:"usageDuties" db:"usage_duties"`
-	RealEntities        []string         `json:"realEntities" db:"real_entities"`
-	DataObjectivity     *DataObjectivity `json:"dataObjectivity" db:"data_objectivity"`
-}
-
-type API struct {
-}
-
-type ExternalDataSource struct {
-	// ID contains the uuid of the external data source
-	ID string `json:"id" db:"id"`
-	// Name contains the name of the external data source
-	Name string `json:"name" db:"name"`
 	// Reference contains information about the
 	Reference *DataReference `json:"reference" db:"reference"`
 	// Origin
@@ -60,4 +44,18 @@ type ExternalDataSource struct {
 	PerformanceLimitations       *enums.NoneHighRange                `json:"performanceLimitations" db:"performancelimitations"`
 	Availability                 *enums.NoneHighRange                `json:"availability" db:"availability"`
 	GDPRCompliant                *bool                               `json:"gdprCompliant" db:"gdpr_compliant"`
+}
+
+type API struct {
+	IsSecure          *bool   `json:"isSecure" db:"is_secure"`
+	Host              *string `json:"host" db:"host"`
+	Port              *int    `json:"port" db:"port"`
+	Path              *string `json:"path" db:"path"`
+	AdditionalHeaders []Tuple `json:"additionalHeaders" `
+}
+
+type ExternalDataSource struct {
+	BaseData
+	Metadata Metadata `json:"metadata"`
+	API      API      `json:"api"`
 }

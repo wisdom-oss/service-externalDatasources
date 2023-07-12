@@ -27,6 +27,9 @@
 !routes/
 !routes/*.go
 
+!enums/
+!enums/*.go
+
 # Allow package mamangement files for golang
 !go.mod
 !go.sum

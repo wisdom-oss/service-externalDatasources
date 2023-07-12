@@ -20,7 +20,7 @@ import (
 // microservice
 func main() {
 	// create a new logger for the main function
-	l := log.With().Str("step", "main-service").Logger()
+	l := log.With().Logger()
 	l.Info().Msgf("starting %s service", globals.ServiceName)
 
 	// create a new router
@@ -31,8 +31,10 @@ func main() {
 	router.Use(httplog.Handler(l))
 	// now add the authorization middleware to the router
 	router.Use(wisdomMiddleware.Authorization(globals.AuthorizationConfiguration, globals.ServiceName))
+	router.Use(wisdomMiddleware.NativeErrorHandler(globals.ServiceName))
+	router.Use(wisdomMiddleware.WISdoMErrorHandler(globals.Errors))
 	// now mount the admin router
-	router.Mount("/admin", AdminRouter())
+	router.Get("/", routes.GetAllExternalAPIs)
 
 	// now boot up the service
 	// Configure the HTTP server
@@ -59,12 +61,4 @@ func main() {
 	// Block further code execution until the shutdown signal was received
 	<-cancelSignal
 
-}
-
-// AdminRouter handles the routing for the /admin endpoint and the sub-paths
-func AdminRouter() http.Handler {
-	r := chi.NewRouter()
-	// since this service only accepts request using form-data
-	r.With(chiMiddleware.AllowContentType("multipart/form-data")).Post("/new", routes.NewExternalAPI)
-	return r
 }

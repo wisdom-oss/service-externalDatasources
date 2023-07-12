@@ -1,4 +1,4 @@
-CREATE TYPE dataReference AS
+CREATE TYPE external_data_sources.dataReference AS
 (
     -- the topic of the data
     topic              text,
@@ -9,7 +9,7 @@ CREATE TYPE dataReference AS
 );
 
 -- name: create-type-dataOrigin
-CREATE TYPE dataOrigin AS
+CREATE TYPE external_data_sources.dataOrigin AS
 (
     -- the name of the data provider
     provider text,
@@ -20,7 +20,7 @@ CREATE TYPE dataOrigin AS
 );
 
 -- name: create-type-tuple
-CREATE TYPE tuple AS
+CREATE TYPE external_data_sources.tuple AS
 (
     -- a non-unique "key"
     x text,
@@ -29,7 +29,7 @@ CREATE TYPE tuple AS
 );
 
 -- name: create-type-documentation
-CREATE TYPE documentation AS
+CREATE TYPE external_data_sources.documentation AS
 (
     -- the type of the documentation (a book, a pdf, a website, etc.)
     type      text,
@@ -40,10 +40,10 @@ CREATE TYPE documentation AS
 );
 
 -- name: create-enum-costModel
-CREATE TYPE billingModel AS ENUM ('openSource', 'free', 'singlePurchase', 'byTime', 'byAccess', 'byData');
+CREATE TYPE  external_data_sources.billingModel AS ENUM ('openSource', 'free', 'singlePurchase', 'byTime', 'byAccess', 'byData');
 
 -- name: create-type-accessCosts
-CREATE TYPE billingInformation AS
+CREATE TYPE external_data_sources.billingInformation AS
 (
     -- the model used for calculating the costs
     model        billingModel,
@@ -52,7 +52,7 @@ CREATE TYPE billingInformation AS
 );
 
 -- name: create-type-provisionInformation
-CREATE TYPE provisionInformation AS
+CREATE TYPE external_data_sources.provisionInformation AS
 (
     -- the type of the data source
     type   text,
@@ -61,52 +61,52 @@ CREATE TYPE provisionInformation AS
 );
 
 -- name: create-enum-validity
-CREATE TYPE validity AS ENUM ('fully', 'partially', 'none');
+CREATE TYPE external_data_sources.validity AS ENUM ('fully', 'partially', 'none');
 
 -- name: create-enum-none-high-range
-CREATE TYPE noneHighRange AS ENUM ('none', 'low', 'medium', 'high');
+CREATE TYPE external_data_sources.noneHighRange AS ENUM ('none', 'low', 'medium', 'high');
 
 -- name: create-enum-precision
-CREATE TYPE precisionLevel AS ENUM ('fine', 'usual', 'unusual', 'imprecise');
+CREATE TYPE external_data_sources.precisionLevel AS ENUM ('fine', 'usual', 'unusual', 'imprecise');
 
 -- name: create-enum-reputation
-CREATE TYPE reputation AS ENUM ('independent_and_external', 'independent_or_external', 'suspected_high', 'suspected_low');
+CREATE TYPE external_data_sources.reputation AS ENUM ('independent_and_external', 'independent_or_external', 'suspected_high', 'suspected_low');
 
 -- name: create-type-checked-range
-CREATE TYPE checkedRange AS
+CREATE TYPE external_data_sources.checkedRange AS
 (
     checked bool,
     range   noneHighRange
 );
 
-CREATE TYPE objectivity AS
+CREATE TYPE external_data_sources.objectivity AS
 (
     conflict_of_interest bool,
     raw_data             bool,
     automatic_capture    bool
 );
 
-CREATE TYPE logicalConsistency AS
+CREATE TYPE external_data_sources.logicalConsistency AS
 (
     checked                   bool,
     contradictions_examinable bool,
     range                     noneHighRange
 );
 
-CREATE TYPE delay AS
+CREATE TYPE external_data_sources.delay AS
 (
     source    noneHighRange,
     recording noneHighRange
 );
 
-CREATE TYPE header AS
+CREATE TYPE external_data_sources.header AS
 (
     key    text,
     value  text,
     secure bool
 );
 
-CREATE TYPE delayInformation AS ENUM ('direct', 'automatic', 'manual', 'none');
+CREATE TYPE external_data_sources.delayInformation AS ENUM ('direct', 'automatic', 'manual', 'none');
 
 -- name: create-table-sources
 -- This table contains the following basic data of external sources:
@@ -210,16 +210,13 @@ CREATE TABLE external_data_sources.apis
 
 CREATE VIEW external_data_sources.info AS
 (
-SELECT s.*,
-       CASE
-           WHEN (SELECT EXISTS(SELECT * FROM external_data_sources.metadata WHERE metadata.id = id)) THEN
-               to_jsonb(m.*)
-           END as metadata,
-       CASE
-           WHEN (SELECT EXISTS(SELECT * FROM external_data_sources.apis WHERE apis.id = id)) THEN
-               to_jsonb(a.*)
-           END as api
-FROM external_data_sources.sources s
-         LEFT JOIN external_data_sources.metadata m on s.id = m.id
-         LEFT JOIN external_data_sources.apis a on s.id = a.id
-    );
+    SELECT s.*,
+           reference, origin, distinctive_features, usage_rights, usage_duties, real_entities, local_expert, external_documentation, update_rate, languages, billing, provisioning, derived_from, is_recent, validity, duplicates, errors, precision, reputation, objectivity, usual_survey_method, density, coverage, representation_consistency, logical_consistency, delay, delay_information, performancelimitations, availability, gdpr_compliant,
+           is_secure, host, port, path, additional_headers
+    FROM external_data_sources.sources s
+             LEFT JOIN external_data_sources.metadata m on s.id = m.id
+             LEFT JOIN external_data_sources.apis a on s.id = a.id
+);
+
+--name: get-all-information
+SELECT * FROM external_data_sources.info;
