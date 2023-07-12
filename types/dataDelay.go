@@ -2,12 +2,13 @@ package types
 
 import (
 	"errors"
+	"external-api-service/enums"
 	"regexp"
 )
 
 type DataDelay struct {
-	Ingress NoneHighRange `json:"ingress"`
-	Egress  NoneHighRange `json:"egress"`
+	Ingress enums.NoneHighRange `json:"ingress"`
+	Egress  enums.NoneHighRange `json:"egress"`
 }
 
 func (dd *DataDelay) Scan(src interface{}) error {
@@ -25,7 +26,7 @@ func (dd *DataDelay) Scan(src interface{}) error {
 	if len(matches) != 3 {
 		return errors.New("unexpected match count")
 	}
-	dd.Ingress = NoneHighRange(matches[1])
-	dd.Egress = NoneHighRange(matches[2])
+	dd.Ingress = enums.NoneHighRange(matches[1])
+	dd.Egress = enums.NoneHighRange(matches[2])
 	return nil
 }

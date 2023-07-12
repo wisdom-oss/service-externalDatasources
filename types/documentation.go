@@ -3,6 +3,7 @@ package types
 import (
 	"database/sql/driver"
 	"errors"
+	"external-api-service/enums"
 	"fmt"
 	"regexp"
 	"strings"
@@ -10,9 +11,9 @@ import (
 
 // Documentation represents a single documentation entry for a data source
 type Documentation struct {
-	Type      string        `json:"type"`
-	Location  string        `json:"location"`
-	Verbosity NoneHighRange `json:"verbosity"`
+	Type      string              `json:"type"`
+	Location  string              `json:"location"`
+	Verbosity enums.NoneHighRange `json:"verbosity"`
 }
 
 func (d *Documentation) Scan(src interface{}) error {
@@ -33,7 +34,7 @@ func (d *Documentation) Scan(src interface{}) error {
 	}
 	doc.Type = values[0]
 	doc.Location = values[1]
-	doc.Verbosity = NoneHighRange(values[2])
+	doc.Verbosity = enums.NoneHighRange(values[2])
 	*d = doc
 	return nil
 }
@@ -84,7 +85,7 @@ func (d *Documentations) Scan(src interface{}) error {
 		}
 		doc.Type = strings.Trim(values[0], `\"`)
 		doc.Location = values[1]
-		doc.Verbosity = NoneHighRange(values[2])
+		doc.Verbosity = enums.NoneHighRange(values[2])
 		documentationElements = append(documentationElements, doc)
 	}
 

@@ -2,13 +2,14 @@ package types
 
 import (
 	"errors"
+	"external-api-service/enums"
 	"regexp"
 	"strconv"
 )
 
 type CheckedRange struct {
 	Checked bool
-	Range   NoneHighRange
+	Range   enums.NoneHighRange
 }
 
 func (cr *CheckedRange) Scan(src interface{}) error {
@@ -31,6 +32,6 @@ func (cr *CheckedRange) Scan(src interface{}) error {
 	if err != nil {
 		return err
 	}
-	cr.Range = NoneHighRange(matches[2])
+	cr.Range = enums.NoneHighRange(matches[2])
 	return nil
 }

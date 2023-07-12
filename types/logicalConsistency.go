@@ -2,14 +2,15 @@ package types
 
 import (
 	"errors"
+	"external-api-service/enums"
 	"regexp"
 	"strconv"
 )
 
 type LogicalConsistency struct {
-	Checked                  bool
-	ContradictionsExaminable bool
-	Range                    NoneHighRange
+	Checked                  bool                `json:"checked"`
+	ContradictionsExaminable bool                `json:"contradictionsExaminable"`
+	Range                    enums.NoneHighRange `json:"range"`
 }
 
 func (lc *LogicalConsistency) Scan(src interface{}) error {
@@ -33,5 +34,6 @@ func (lc *LogicalConsistency) Scan(src interface{}) error {
 		return err
 	}
 	lc.ContradictionsExaminable, err = strconv.ParseBool(matches[2])
+	lc.Range = enums.NoneHighRange(matches[3])
 	return nil
 }
