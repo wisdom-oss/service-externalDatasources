@@ -42,11 +42,11 @@ func (do *DataOrigin) Scan(src interface{}) error {
 }
 
 func (do DataOrigin) Value() (driver.Value, error) {
-	provider := strings.ReplaceAll(do.Provider, `""`, `"`)
-	provider = strings.ReplaceAll(provider, `''`, `'`)
-	creator := strings.ReplaceAll(do.Creator, `""`, `"`)
-	creator = strings.ReplaceAll(creator, `''`, `'`)
-	owner := strings.ReplaceAll(do.Owner, `""`, `"`)
-	owner = strings.ReplaceAll(owner, `''`, `'`)
-	return fmt.Sprintf("(%s,%s,%s)", provider, creator, owner), nil
+	provider := strings.ReplaceAll(do.Provider, `"`, `""`)
+	provider = strings.ReplaceAll(provider, `'`, `''`)
+	creator := strings.ReplaceAll(do.Creator, `"`, `""`)
+	creator = strings.ReplaceAll(creator, `'`, `''`)
+	owner := strings.ReplaceAll(do.Owner, `"`, `""`)
+	owner = strings.ReplaceAll(owner, `'`, `''`)
+	return fmt.Sprintf("(\"%s\",\"%s\",\"%s\")", provider, creator, owner), nil
 }
