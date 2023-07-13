@@ -1,7 +1,9 @@
 package types
 
 import (
+	"database/sql/driver"
 	"errors"
+	"fmt"
 	"regexp"
 )
 
@@ -28,4 +30,8 @@ func (dp *DataProvisioning) Scan(src interface{}) error {
 	dp.Type = matches[1]
 	dp.Format = matches[2]
 	return nil
+}
+
+func (dp DataProvisioning) Value() (driver.Value, error) {
+	return fmt.Sprintf("(%s,%s)", dp.Type, dp.Format), nil
 }
