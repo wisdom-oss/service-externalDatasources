@@ -1,8 +1,10 @@
 package types
 
 import (
+	"database/sql/driver"
 	"errors"
 	"external-api-service/enums"
+	"fmt"
 	"regexp"
 	"strconv"
 )
@@ -36,4 +38,8 @@ func (lc *LogicalConsistency) Scan(src interface{}) error {
 	lc.ContradictionsExaminable, err = strconv.ParseBool(matches[2])
 	lc.Range = enums.NoneHighRange(matches[3])
 	return nil
+}
+
+func (lc LogicalConsistency) Value() (driver.Value, error) {
+	return fmt.Sprintf("(%t,%t,%s)", lc.Checked, lc.ContradictionsExaminable, lc.Range), nil
 }
