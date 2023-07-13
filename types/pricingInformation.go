@@ -1,7 +1,9 @@
 package types
 
 import (
+	"database/sql/driver"
 	"errors"
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -62,4 +64,8 @@ func (pi *PricingInformation) Scan(src interface{}) error {
 	}
 	pi.PricePerUnit = cost
 	return nil
+}
+
+func (pi PricingInformation) Value() (driver.Value, error) {
+	return fmt.Sprintf("(%s,%d)", pi.Model.String(), pi.PricePerUnit), nil
 }
