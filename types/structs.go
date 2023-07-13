@@ -6,8 +6,9 @@ import (
 )
 
 type BaseData struct {
-	ID   string `json:"id" db:"id"`
-	Name string `json:"name" db:"name"`
+	ID          string  `json:"id" db:"id"`
+	Name        string  `json:"name" db:"name"`
+	Description *string `json:"description" db:"description"`
 }
 
 type Metadata struct {
