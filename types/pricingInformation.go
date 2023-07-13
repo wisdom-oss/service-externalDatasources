@@ -67,5 +67,5 @@ func (pi *PricingInformation) Scan(src interface{}) error {
 }
 
 func (pi PricingInformation) Value() (driver.Value, error) {
-	return fmt.Sprintf("(%s,%d)", pi.Model.String(), pi.PricePerUnit), nil
+	return fmt.Sprintf("(%s,%f)", pi.Model.String(), pi.PricePerUnit), nil
 }
