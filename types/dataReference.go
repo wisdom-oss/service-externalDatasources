@@ -1,7 +1,9 @@
 package types
 
 import (
+	"database/sql/driver"
 	"errors"
+	"fmt"
 	"regexp"
 	"time"
 )
@@ -41,4 +43,13 @@ func (dr *DataReference) Scan(src interface{}) error {
 	obj.TemporalReference = [2]time.Time{startTime, endTime}
 	*dr = obj
 	return nil
+}
+
+func (dr DataReference) Value() (driver.Value, error) {
+	// build the time strings
+	rangeStart := dr.TemporalReference[0].Format("2006-01-02")
+	rangeEnd := dr.TemporalReference[1].Format("2006-01-02")
+	dateRange := fmt.Sprintf("[%s,%s)", rangeStart, rangeEnd)
+	val := fmt.Sprintf("(%s,%s,\"%s\")", dr.Topic, dr.LocalReference, dateRange)
+	return val, nil
 }
