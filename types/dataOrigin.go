@@ -1,7 +1,9 @@
 package types
 
 import (
+	"database/sql/driver"
 	"errors"
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -37,4 +39,14 @@ func (do *DataOrigin) Scan(src interface{}) error {
 	obj.Owner = owner
 	*do = obj
 	return nil
+}
+
+func (do DataOrigin) Value() (driver.Value, error) {
+	provider := strings.ReplaceAll(do.Provider, `""`, `"`)
+	provider = strings.ReplaceAll(provider, `''`, `'`)
+	creator := strings.ReplaceAll(do.Creator, `""`, `"`)
+	creator = strings.ReplaceAll(creator, `''`, `'`)
+	owner := strings.ReplaceAll(do.Owner, `""`, `"`)
+	owner = strings.ReplaceAll(owner, `''`, `'`)
+	return fmt.Sprintf("(%s,%s,%s)", provider, creator, owner), nil
 }
