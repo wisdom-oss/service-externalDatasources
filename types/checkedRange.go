@@ -39,5 +39,5 @@ func (cr *CheckedRange) Scan(src interface{}) error {
 }
 
 func (cr CheckedRange) Value() (driver.Value, error) {
-	return fmt.Sprintf("(%b,%s)", cr.Checked, cr.Range), nil
+	return fmt.Sprintf("(%t,%s)", cr.Checked, cr.Range), nil
 }
