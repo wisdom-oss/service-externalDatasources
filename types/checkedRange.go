@@ -1,8 +1,10 @@
 package types
 
 import (
+	"database/sql/driver"
 	"errors"
 	"external-api-service/enums"
+	"fmt"
 	"regexp"
 	"strconv"
 )
@@ -34,4 +36,8 @@ func (cr *CheckedRange) Scan(src interface{}) error {
 	}
 	cr.Range = enums.NoneHighRange(matches[2])
 	return nil
+}
+
+func (cr CheckedRange) Value() (driver.Value, error) {
+	return fmt.Sprintf("(%b,%s)", cr.Checked, cr.Range), nil
 }
