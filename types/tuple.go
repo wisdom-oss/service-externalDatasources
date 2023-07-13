@@ -97,5 +97,6 @@ func (t Tuples) Value() (driver.Value, error) {
 		singleTuples = append(singleTuples, val.(string))
 	}
 	tupleArray := strings.Join(singleTuples, ",")
+	tupleArray = fmt.Sprintf("{%s}", tupleArray)
 	return tupleArray, nil
 }
