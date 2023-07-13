@@ -42,7 +42,7 @@ func (d *Documentation) Scan(src interface{}) error {
 func (d *Documentation) Value() (driver.Value, error) {
 	escapedType := strings.ReplaceAll(d.Type, `'`, `''`)
 	escapedLocation := strings.ReplaceAll(d.Type, `'`, `''`)
-	return fmt.Sprintf("('%s','%s',%s::nonehighrange)::documentation", escapedType, escapedLocation, d.Verbosity), nil
+	return fmt.Sprintf("\"(%s,%s,%s)\"", escapedType, escapedLocation, d.Verbosity), nil
 }
 
 type Documentations []Documentation
@@ -103,6 +103,6 @@ func (d Documentations) Value() (driver.Value, error) {
 		singleParts = append(singleParts, val.(string))
 	}
 	documentationString := strings.Join(singleParts, ",")
-	documentationString = fmt.Sprintf("ARRAY[%s]", documentationString)
+	documentationString = fmt.Sprintf("{%s}", documentationString)
 	return documentationString, nil
 }
