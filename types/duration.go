@@ -1,6 +1,7 @@
 package types
 
 import (
+	"database/sql/driver"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -39,4 +40,28 @@ func (d *Duration) Scan(src interface{}) error {
 func (d *Duration) MarshalJSON() ([]byte, error) {
 	nativeDuration := time.Duration(*d)
 	return json.Marshal(nativeDuration.Microseconds())
+}
+
+func (d *Duration) UnmarshalJSON(data []byte) error {
+	var aux int64
+	err := json.Unmarshal(data, &aux)
+	if err != nil {
+		return err
+	}
+	durationString := fmt.Sprintf("%dus", aux)
+	dur, err := time.ParseDuration(durationString)
+	*d = Duration(dur)
+	return nil
+}
+
+func (d Duration) Value() (driver.Value, error) {
+	dur := time.Duration(d)
+	years := int64(dur / (365 * 24 * time.Hour))
+	months := int64((dur % (365 * 24 * time.Hour)) / (30 * 24 * time.Hour))
+	days := int64((dur % (30 * 24 * time.Hour)) / (24 * time.Hour))
+	hours := int64((dur % (24 * time.Hour)) / time.Hour)
+	minutes := int64((dur % time.Hour) / time.Minute)
+	seconds := int64((dur % time.Minute) / time.Second)
+	microseconds := int64((dur % time.Second) / time.Millisecond)
+	return fmt.Sprintf("%d years %d mons %d days %02d:%02d:%02d.%d\n", years, months, days, hours, minutes, seconds, microseconds), nil
 }
