@@ -1,7 +1,9 @@
 package types
 
 import (
+	"database/sql/driver"
 	"errors"
+	"fmt"
 	"regexp"
 	"strconv"
 )
@@ -43,4 +45,8 @@ func (do *DataObjectivity) Scan(src interface{}) error {
 	}
 	*do = obj
 	return nil
+}
+
+func (do DataObjectivity) Value() (driver.Value, error) {
+	return fmt.Sprintf("(%t,%t,%t)", do.ConflictOfInterest, do.RawData, do.AutomaticCapture), nil
 }
