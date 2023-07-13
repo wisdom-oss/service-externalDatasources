@@ -1,8 +1,10 @@
 package types
 
 import (
+	"database/sql/driver"
 	"errors"
 	"external-api-service/enums"
+	"fmt"
 	"regexp"
 )
 
@@ -29,4 +31,8 @@ func (dd *DataDelay) Scan(src interface{}) error {
 	dd.Ingress = enums.NoneHighRange(matches[1])
 	dd.Egress = enums.NoneHighRange(matches[2])
 	return nil
+}
+
+func (dd DataDelay) Value() (driver.Value, error) {
+	return fmt.Sprintf("(%s,%s)", dd.Ingress, dd.Egress), nil
 }
