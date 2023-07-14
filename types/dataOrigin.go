@@ -9,9 +9,9 @@ import (
 )
 
 type DataOrigin struct {
-	Provider string
-	Creator  string
-	Owner    string
+	Provider string `json:"provider"`
+	Creator  string `json:"creator"`
+	Owner    string `json:"owner"`
 }
 
 func (do *DataOrigin) Scan(src interface{}) error {
