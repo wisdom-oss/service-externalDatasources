@@ -52,7 +52,7 @@ type API struct {
 	Host              *string `json:"host" db:"host"`
 	Port              *int    `json:"port" db:"port"`
 	Path              *string `json:"path" db:"path"`
-	AdditionalHeaders []Tuple `json:"additionalHeaders" `
+	AdditionalHeaders *Tuples `json:"additionalHeaders" `
 }
 
 type ExternalDataSource struct {
