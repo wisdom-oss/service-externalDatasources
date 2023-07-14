@@ -332,4 +332,14 @@ VALUES
         $28,
         $29,
         $30,
-        $31)
+        $31);
+
+-- name: add-api
+INSERT INTO
+    external_data_sources.apis (id, is_secure, host, port, path, additional_headers)
+VALUES
+($1, $2, $3, $4, $5, $6);
+
+-- name: get-single-source
+SELECT * FROM external_data_sources.info
+WHERE id = $1::uuid OR name = $1::text;
