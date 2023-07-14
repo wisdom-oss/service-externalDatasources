@@ -140,7 +140,7 @@ func NewExternalAPI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// now check the multipart form for the metadata
-	var api *types.Metadata
+	var api *types.API
 	apiList, apiSet := r.MultipartForm.Value["api"]
 	if !apiSet {
 		log.Warn().Msg("no api configuration sent in creation request")
@@ -150,7 +150,7 @@ func NewExternalAPI(w http.ResponseWriter, r *http.Request) {
 			log.Warn().Msg("multiple api configuration objects in request. only using first")
 		}
 		// now get the first api config object
-		rawApi := strings.TrimSpace(metadataList[0])
+		rawApi := strings.TrimSpace(apiList[0])
 
 		// now check if the object even contains text
 		if rawApi == "" {
@@ -225,49 +225,73 @@ func NewExternalAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = globals.SqlQueries.Exec(transaction, "add-metadata",
-		uuid,
-		metadata.Reference,
-		metadata.Origin,
-		metadata.DistinctiveFeatures,
-		metadata.UsageRights,
-		metadata.UsageDuties,
-		metadata.RealEntities,
-		metadata.LocalExpert,
-		metadata.Documentation,
-		metadata.UpdateRate,
-		metadata.Languages,
-		metadata.Billing,
-		metadata.Provision,
-		metadata.DerivedFrom,
-		metadata.Recent,
-		metadata.Validity,
-		metadata.Duplicates,
-		metadata.Errors,
-		metadata.Precision,
-		metadata.Reputation,
-		metadata.DataObjectivity,
-		metadata.UsualSurveyMethod,
-		metadata.Density,
-		metadata.Coverage,
-		metadata.RepresentationConsistency,
-		metadata.LogicalConsistency,
-		metadata.DataDelay,
-		metadata.DelayInformationTransmission,
-		metadata.PerformanceLimitations,
-		metadata.Availability,
-		metadata.GDPRCompliant,
-	)
-	if err != nil {
-		rollbackErr := transaction.Rollback()
-		if rollbackErr != nil {
+	if metadataSet {
+		_, err = globals.SqlQueries.Exec(transaction, "add-metadata",
+			uuid,
+			metadata.Reference,
+			metadata.Origin,
+			metadata.DistinctiveFeatures,
+			metadata.UsageRights,
+			metadata.UsageDuties,
+			metadata.RealEntities,
+			metadata.LocalExpert,
+			metadata.Documentation,
+			metadata.UpdateRate,
+			metadata.Languages,
+			metadata.Billing,
+			metadata.Provision,
+			metadata.DerivedFrom,
+			metadata.Recent,
+			metadata.Validity,
+			metadata.Duplicates,
+			metadata.Errors,
+			metadata.Precision,
+			metadata.Reputation,
+			metadata.DataObjectivity,
+			metadata.UsualSurveyMethod,
+			metadata.Density,
+			metadata.Coverage,
+			metadata.RepresentationConsistency,
+			metadata.LogicalConsistency,
+			metadata.DataDelay,
+			metadata.DelayInformationTransmission,
+			metadata.PerformanceLimitations,
+			metadata.Availability,
+			metadata.GDPRCompliant,
+		)
+		if err != nil {
+			rollbackErr := transaction.Rollback()
+			if rollbackErr != nil {
+				nativeErrorChannel <- err
+				<-nativeErrorHandled
+				return
+			}
 			nativeErrorChannel <- err
 			<-nativeErrorHandled
 			return
 		}
-		nativeErrorChannel <- err
-		<-nativeErrorHandled
-		return
+	}
+
+	if apiSet {
+		_, err := globals.SqlQueries.Exec(transaction, "add-api",
+			uuid,
+			api.IsSecure,
+			api.Host,
+			api.Port,
+			api.Path,
+			api.AdditionalHeaders,
+		)
+		if err != nil {
+			rollbackErr := transaction.Rollback()
+			if rollbackErr != nil {
+				nativeErrorChannel <- err
+				<-nativeErrorHandled
+				return
+			}
+			nativeErrorChannel <- err
+			<-nativeErrorHandled
+			return
+		}
 	}
 
 	err = transaction.Commit()
@@ -283,4 +307,30 @@ func NewExternalAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// since the creation was completed successfully get the new entry and
+	// return it
+	res, err := globals.SqlQueries.Query(globals.Db, "get-single-source", uuid)
+	if err != nil {
+		nativeErrorChannel <- err
+		<-nativeErrorHandled
+		return
+	}
+
+	var externalDatasource types.ExternalDataSource
+	err = scan.Row(&externalDatasource, res)
+	if err != nil {
+		nativeErrorChannel <- err
+		<-nativeErrorHandled
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/json")
+	w.WriteHeader(http.StatusCreated)
+
+	err = json.NewEncoder(w).Encode(externalDatasource)
+	if err != nil {
+		nativeErrorChannel <- err
+		<-nativeErrorHandled
+		return
+	}
 }
