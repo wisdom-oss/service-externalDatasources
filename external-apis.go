@@ -35,6 +35,7 @@ func main() {
 	router.Use(wisdomMiddleware.WISdoMErrorHandler(globals.Errors))
 	// now mount the admin router
 	router.Get("/", routes.GetAllExternalAPIs)
+	router.Post("/", routes.NewExternalAPI)
 
 	// now boot up the service
 	// Configure the HTTP server

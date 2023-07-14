@@ -35,8 +35,8 @@ github.com/rs/zerolog v1.29.1/go.mod h1:Le6ESbR7hc+DP6Lt1THiV8CQSdkkNrd3R0XbEgp3
 github.com/stretchr/testify v1.8.2 h1:+h33VjcLVPDHtOdpUCuF+7gSuG3yGIftsP1YvFihtJ8=
 github.com/wisdom-oss/commonTypes v1.0.0 h1:+KuD3l+g1P6K2DwyC0nqo0RrpZdKiAoMLOBhQIce7WQ=
 github.com/wisdom-oss/commonTypes v1.0.0/go.mod h1:Q7X33dplhIdZxIbJRyTLhk9ojrDN6chq9D5xExToUEo=
-github.com/wisdom-oss/microservice-middlewares/v2 v2.0.1 h1:Zsrpcfy/S7cH+aOMWnVXwkzGOhBKuKJiP+q9cMZPMN4=
-github.com/wisdom-oss/microservice-middlewares/v2 v2.0.1/go.mod h1:z/WxLT7V6gOatNca4MtbsX1lj1Ywh1L51U0uZkYMF50=
+github.com/wisdom-oss/microservice-middlewares/v2 v2.0.2 h1:3wHlh5DmD8vA6Drg7+rzE8qmCfuB2PH1qUby+Rkf2ms=
+github.com/wisdom-oss/microservice-middlewares/v2 v2.0.2/go.mod h1:z/WxLT7V6gOatNca4MtbsX1lj1Ywh1L51U0uZkYMF50=
 github.com/wisdom-oss/microservice-utils v1.0.0 h1:zPgMTv9o01FKYsaclugUdSKFepTMJyJ93SPcRpElNWg=
 github.com/wisdom-oss/microservice-utils v1.0.0/go.mod h1:f+UsuRlxA0WpbM+gjVbqSYieYyIKzoe/HK+lwyF/W1Y=
 golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 h1:6zppjxzCulZykYSLyVDYbneBfbaBIQPYMevg0bEwv2s=

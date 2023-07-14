@@ -1,8 +1,62 @@
 [
   {
-    "code": "NO_NAME_SET",
-    "title": "No Datasource Name Set",
+    "code": "NO_DATASOURCE_NAME",
+    "title": "No Datasource Name",
     "description": "the name for the datasource was not set. please check your request",
+    "httpCode": 400
+  },
+  {
+    "code": "EMPTY_DATASOURCE_NAME",
+    "title": "Empty Datasource Name",
+    "description": "the name for the datasource is empty. please check your request",
+    "httpCode": 400
+  },
+  {
+    "code": "EMPTY_DATASOURCE_DESCRIPTION",
+    "title": "Empty Datasource Desciption",
+    "description": "the description for the datasource is empty. please check your request",
+    "httpCode": 400
+  },
+  {
+    "code": "METADATA_MISSING",
+    "title": "Metadata Missing",
+    "description": "the multipart-form indicated that metadata was supposed to be sent, but none was found",
+    "httpCode": 400
+  },
+  {
+    "code": "INVALID_METADATA",
+    "title": "Metadata Invalid",
+    "description": "the properties of the metadata do not match the expected properties.",
+    "httpCode": 422
+  },
+  {
+    "code": "INVALID_METADATA_JSON",
+    "title": "JSON Invalid",
+    "description": "the contents of the metadata field was not valid json",
+    "httpCode": 400
+  },
+  {
+    "code": "UNKNOWN_METADATA_FIELD",
+    "title": "Unknown Metadata Field",
+    "description": "the metadata contains a field that is not known to the system",
+    "httpCode": 422
+  },
+  {
+    "code": "API_CONFIGURATION_MISSING",
+    "title": "API Configuration Missing",
+    "description": "the multipart-form indicated that a api configuration was supposed to be sent, but none was found",
+    "httpCode": 400
+  },
+  {
+    "code": "INVALID_API_CONFIGURATION",
+    "title": "Metadata Invalid",
+    "description": "the contents of the api configuration field was not valid json",
+    "httpCode": 400
+  },
+  {
+    "code": "UNKNOWN_API_CONFIGURATION_FIELD",
+    "title": "Unknown Metadata Field",
+    "description": "the api configuration contains a field that is not known to the system",
     "httpCode": 400
   }
 ]

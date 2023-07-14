@@ -40,7 +40,7 @@ CREATE TYPE external_data_sources.documentation AS
 );
 
 -- name: create-enum-costModel
-CREATE TYPE  external_data_sources.billingModel AS ENUM ('openSource', 'free', 'singlePurchase', 'byTime', 'byAccess', 'byData');
+CREATE TYPE external_data_sources.billingModel AS ENUM ('openSource', 'free', 'singlePurchase', 'byTime', 'byAccess', 'byData');
 
 -- name: create-type-accessCosts
 CREATE TYPE external_data_sources.billingInformation AS
@@ -210,13 +210,126 @@ CREATE TABLE external_data_sources.apis
 
 CREATE VIEW external_data_sources.info AS
 (
-    SELECT s.*,
-           reference, origin, distinctive_features, usage_rights, usage_duties, real_entities, local_expert, external_documentation, update_rate, languages, billing, provisioning, derived_from, is_recent, validity, duplicates, errors, precision, reputation, objectivity, usual_survey_method, density, coverage, representation_consistency, logical_consistency, delay, delay_information, performancelimitations, availability, gdpr_compliant,
-           is_secure, host, port, path, additional_headers
-    FROM external_data_sources.sources s
-             LEFT JOIN external_data_sources.metadata m on s.id = m.id
-             LEFT JOIN external_data_sources.apis a on s.id = a.id
-);
+SELECT
+    s.*,
+    reference,
+    origin,
+    distinctive_features,
+    usage_rights,
+    usage_duties,
+    real_entities,
+    local_expert,
+    external_documentation,
+    update_rate,
+    languages,
+    billing,
+    provisioning,
+    derived_from,
+    is_recent,
+    validity,
+    duplicates,
+    errors,
+    precision,
+    reputation,
+    objectivity,
+    usual_survey_method,
+    density,
+    coverage,
+    representation_consistency,
+    logical_consistency,
+    delay,
+    delay_information,
+    performancelimitations,
+    availability,
+    gdpr_compliant,
+    is_secure,
+    host,
+    port,
+    path,
+    additional_headers
+FROM
+    external_data_sources.sources s
+        LEFT JOIN external_data_sources.metadata m on s.id = m.id
+        LEFT JOIN external_data_sources.apis a on s.id = a.id
+    );
 
 --name: get-all-information
-SELECT * FROM external_data_sources.info;
+SELECT *
+FROM
+    external_data_sources.info;
+
+--name: add-base-data
+INSERT INTO
+    external_data_sources.sources (name, description)
+VALUES
+    ($1, $2)
+RETURNING id;
+
+-- name: add-metadata
+INSERT INTO
+    external_data_sources.metadata
+(
+    id,
+    reference,
+    origin,
+    distinctive_features,
+    usage_rights,
+    usage_duties,
+    real_entities,
+    local_expert,
+    external_documentation,
+    update_rate,
+    languages,
+    billing,
+    provisioning,
+    derived_from,
+    is_recent,
+    validity,
+    duplicates,
+    errors,
+    precision,
+    reputation,
+    objectivity,
+    usual_survey_method,
+    density,
+    coverage,
+    representation_consistency,
+    logical_consistency,
+    delay,
+    delay_information,
+    performancelimitations,
+    availability,
+    gdpr_compliant)
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8,
+        $9,
+        $10,
+        $11,
+        $12,
+        $13,
+        $14,
+        $15,
+        $16,
+        $17,
+        $18,
+        $19,
+        $20,
+        $21,
+        $22,
+        $23,
+        $24,
+        $25,
+        $26,
+        $27,
+        $28,
+        $29,
+        $30,
+        $31)
