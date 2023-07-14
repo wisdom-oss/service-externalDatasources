@@ -1,4 +1,4 @@
-openapi: 3.1.0
+openapi: 3.0.2
 info:
   title: External Datasource Service
   version: "0.1-alpha"
@@ -16,13 +16,413 @@ servers:
   - url: "https://wisdom-demo.uol.de/api/external-data-sources/"
     description: Default API Base Path
 
+components:
+  schemas:
+    checkedRange:
+      title: Checked Range
+      description: |
+        a None-High Range that has been extended by a boolean which displays if
+        the range has been checked
+      type: object
+      properties:
+        checked:
+          type: boolean
+        range:
+          $ref: '#/components/schemas/nonehighrange'
+    nonehighrange:
+      title: None-High Range
+      description: |
+        a enumeration depicting a range from `none` until `high`
+      type: string
+      enum:
+        - none
+        - low
+        - medium
+        - high
+    tuple:
+      title: Tuple
+      description: |
+        a tuple represents key-value data which does not have a unique key
+      type: array
+      minItems: 2
+      maxItems: 2
+      items:
+        type: string
+    metadata:
+      title: Metadata
+      description: |
+        this object represents the metadata of a external datasource. the
+        possible metadata entries have been evaluated in the scope of a master
+        thesis
+      type: object
+      properties:
+        reference:
+          type: object
+          title: References
+          description: |
+            this object contains the topic of the external datasource and if
+            set previously it also contains a spatial reference and temporal
+            reference for the source
+          properties:
+            topic:
+              type: string
+              title: Datasource Topic
+              description: the topic of the datasource
+            localReference:
+              type: string
+              title: Local Reference
+              description: |
+                a description of the geospatial area referenced by the
+                datasource (e.g. Germany)
+            temporalReference:
+              type: array
+              title: Temporal Reference
+              description: |
+                a array containing a interval of time that is contained in the
+                data source
+              minItems: 2
+              maxItems: 2
+              items:
+                type: string
+                format: date-time
+        origin:
+          type: object
+          title: Data Origin
+          description: |
+            this object contains information about the owner/creator/provider
+            of the data contained by the data source
+          properties:
+            provider:
+              type: string
+              title: Data Provider
+              description: |
+                the name of the legal entity providing the access to the data
+            creator:
+              type: string
+              title: Data Creator
+              description: |
+                the name of the legal entity creating the data source
+            owner:
+              type: string
+              title: Data Owner
+              description: |
+                the name of the legal entity owning the data in the datasource
+        distinctiveFeatures:
+          type: array
+          title: Distinctive Features
+          description: |
+            a array of tuples containing important data features listed in the 
+            data source as well as important limitations of the dataset
+          items:
+            $ref: '#/components/schemas/tuple'
+        usageRights:
+          type: string
+          title: Usage Rights
+          description: |
+            a text containing the usage rights of the external data source
+        usageDuties:
+          type: string
+          title: Usage Duties
+          description: |
+            a text containing the duties of the user while using/accessing the
+            external data source
+        realEntities:
+          type: array
+          title: Real World Entities
+          description: |
+            a list of real world entities described by the datasource
+          items:
+            type: string
+        localExpert:
+          type: array
+          title: Local Expert
+          description: |
+            a array of tuples containing the contact data for a person with
+            technical and content knowledge about the external data source
+          items:
+            $ref: '#/components/schemas/tuple'
+        externalDocumentation:
+          type: array
+          title: External Documentation
+          description: |
+            a array of single documentation entries
+          items:
+            properties:
+              type:
+                type: string
+                title: Documentation Type
+                description: |
+                  the type of the documentation (e.g. website, email, pdf)
+              location:
+                type: string
+                title: Documentation Location
+                description: |
+                  the location in which the documentation is accessible (e.g.
+                  a filepath, a record token, a description of a shelf)
+              verbosity:
+                $ref: '#/components/schemas/nonehighrange'
+        updateRate:
+          type: integer
+          format: int64
+          title: Update Rate
+          description: |
+            the rate at which the data source is updated in microseconds. for
+            event based updates this value should be set to/will be `null`
+        languages:
+          type: array
+          title: Languages
+          description: |
+            ISO 639-1 language codes representing the languages of the external
+            data source
+          items:
+            type: string
+        pricingInformation:
+          type: object
+          title: Pricing/Billing Information
+          properties:
+            model:
+              type: string
+              title: Pricing Model
+              enum:
+                - "openSource"
+                - "free"
+                - "singlePurchase"
+                - "perAccess"
+                - "perTimeUnit"
+                - "perDataAmount"
+            pricePerUnit:
+              type: number
+              format: float64
+              title: Price per Model Unit
+        provision:
+          type: object
+          title: Data Provisioning
+          properties:
+            type:
+              type: string
+              description: |
+                the type of the data source
+            format:
+              type: string
+              description: |
+                a description of the format that is provided by the data source.
+                this should be a mime-type, but may also take on other values
+                if a MIME type is not available for the datasource (e.g. direct
+                database access)
+
+
+
+
+
+
+
+        derivedFrom:
+          type: string
+          format: uuid
+          description: |
+            the uuid of a different datasource from which this datasource was
+            derived from
+        isRecent:
+          type: boolean
+          description: |
+            a boolean indicating if the datasource contains recent data
+        validity:
+          type: string
+          description: |
+            a enumeration displaying if the data in the datasource has validity
+          enum:
+            - "fully"
+            - "partially"
+            - "none"
+        duplicates:
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/checkedRange'
+            - description: |
+                The amount of duplicates in the dataset
+
+        errors:
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/checkedRange'
+            - description: |
+                The amount of errors in the dataset
+        precision:
+          type: string
+          title: Data Precision
+          description: |
+            the precision of the dataset
+          enum:
+            - "fine"
+            - "usual"
+            - "unusual"
+            - "imprecise"
+        reputation:
+          type: string
+          title: Reputation of the Datasource
+          enum:
+            - "independent_and_external"
+            - "independent_or_external"
+            - "suspected_high"
+            - "suspected_low"
+        dataObjectivity:
+          type: object
+          properties:
+            conflictOfInterest:
+              type: boolean
+            rawData:
+              type: boolean
+            automaticCapture:
+              type: boolean
+        usualSurveyMethod:
+          type: boolean
+        density:
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/checkedRange'
+            - description: |
+                The density of data points in the dataset
+        coverage:
+          $ref: '#/components/schemas/nonehighrange'
+        representationConsistency:
+          $ref: '#/components/schemas/nonehighrange'
+        logicalConsistency:
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/checkedRange'
+            - properties:
+                contradictionsExaminable:
+                  type: boolean
+            - description: |
+                The density of data points in the dataset
+        dataDelay:
+          type: object
+          properties:
+            ingress:
+              $ref: "#/components/schemas/nonehighrange"
+            egress:
+              $ref: "#/components/schemas/nonehighrange"
+        delayInformationTransmission:
+          type: string
+          enum:
+            - "direct"
+            - "automatic"
+            - "manual"
+            - "none"
+        performanceLimitations:
+          $ref: '#/components/schemas/nonehighrange'
+        availability:
+          $ref: '#/components/schemas/nonehighrange'
+        gdprCompliant:
+          type: boolean
+    API:
+      type: object
+      properties:
+        isSecure:
+          type: boolean
+          title: Secure Communication Enabled
+          description: |
+            If this value is true, the proxy will use and enforce HTTPS while
+            connecting to the api.
+        host:
+          type: string
+          title: Host
+          description: |
+            the host on which the api is reachable. this may be an ip address or
+            a hostname
+        port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+          format: uint16
+          title: Host Port
+          default: 443
+          description: |
+            the port on which the api is reachable
+        path:
+          type: string
+          title: Path
+          description: |
+            The path on which the api is reachable
+          default: "/"
+        additionalHeaders:
+          type: array
+          items:
+            $ref: '#/components/schemas/tuple'
+
+
 paths:
   /:
     get:
       summary: Get all available external data sources
+      description: |
+        This query returns all available external data sources currently 
+        configured
+      responses:
+        200:
+          description: The query was successful
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                      title: Datasource ID
+                      description: |
+                        the uuid identifying the external data source
+                    name:
+                      type: string
+                      title: Datasource Name
+                      description: |
+                        the name of the datasource
+                    description:
+                      type: string
+                      title: Description
+                      description: |
+                        a description of the datasource
+                    metadata:
+                      $ref: '#/components/schemas/metadata'
+                    api:
+                      $ref: '#/components/schemas/API'
+        204:
+          description: No external data sources configured
+
+
 
     post:
       summary: Add a new external data source
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              required:
+                - name
+
+              type: object
+              properties:
+                name:
+                  type: string
+                  required: true
+                description:
+                  type: string
+                metadata:
+                  $ref: '#/components/schemas/metadata'
+                api:
+                  $ref: '#/components/schemas/API'
+            encoding:
+              metadata:
+                contentType: text/json
+              api:
+                contentType: text/json
+      responses:
+        201:
+          description: Source Created
+
+
 
   /{sourceID}:
     parameters:
