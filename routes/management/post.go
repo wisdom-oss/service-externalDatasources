@@ -5,6 +5,7 @@ import (
 	"errors"
 	"external-api-service/globals"
 	"external-api-service/types"
+	"fmt"
 	"github.com/blockloop/scan/v2"
 	"github.com/rs/zerolog/log"
 	"net/http"
@@ -353,6 +354,7 @@ func NewDataSource(w http.ResponseWriter, r *http.Request) {
 
 	// now set the correct output format and encode the found data source
 	w.Header().Set("Content-Type", "text/json")
+	w.Header().Set("Location", fmt.Sprintf("./%s", uuid))
 	w.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(w).Encode(dataSource)
 	if err != nil {
