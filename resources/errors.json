@@ -64,5 +64,11 @@
     "title": "Invalid UUID Format",
     "description": "the uuid provided is not a valid uuid",
     "httpCode": 400
+  },
+  {
+    "code": "NO_DATASOURCE_FOUND",
+    "title": "No Datasource Found",
+    "description": "the uuid or name provided in the url does not match any known data source",
+    "httpCode": 404
   }
 ]
