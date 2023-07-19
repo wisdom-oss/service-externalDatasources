@@ -68,5 +68,8 @@ func managementRouter() http.Handler {
 	r.Get("/", managementRoutes.AllExternalDataSources)
 	r.Post("/", managementRoutes.NewDataSource)
 	r.Get("/{dataSourceUUID}", managementRoutes.SingleDataSource)
+	r.Put("/{dataSourceUUID}", managementRoutes.ReplaceDataSourceRepresentation)
+	r.Patch("/{dataSourceUUID}", managementRoutes.UpdateDataSourceRepresentation)
+	r.Delete("/{dataSourceUUID}", managementRoutes.DeleteExternalDataSource)
 	return r
 }
