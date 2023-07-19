@@ -5,6 +5,7 @@ import (
 	"errors"
 	"external-api-service/globals"
 	"external-api-service/types"
+	"github.com/blockloop/scan/v2"
 	"github.com/rs/zerolog/log"
 	"net/http"
 	"strings"
@@ -328,6 +329,33 @@ func NewDataSource(w http.ResponseWriter, r *http.Request) {
 			<-nativeErrorHandled
 			return
 		}
+		nativeErrorChannel <- err
+		<-nativeErrorHandled
+		return
+	}
+
+	// now try to retrieve the data source from the database
+	dataSourceRow, err := globals.SqlQueries.Query(globals.Db, "get-single-source", uuid)
+	if err != nil {
+		nativeErrorChannel <- err
+		<-nativeErrorHandled
+		return
+	}
+
+	// now try to parse the data source and handle errors
+	var dataSource types.ExternalDataSource
+	err = scan.Row(&dataSource, dataSourceRow)
+	if err != nil {
+		nativeErrorChannel <- err
+		<-nativeErrorHandled
+		return
+	}
+
+	// now set the correct output format and encode the found data source
+	w.Header().Set("Content-Type", "text/json")
+	w.WriteHeader(http.StatusCreated)
+	err = json.NewEncoder(w).Encode(dataSource)
+	if err != nil {
 		nativeErrorChannel <- err
 		<-nativeErrorHandled
 		return
