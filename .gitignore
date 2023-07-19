@@ -25,6 +25,7 @@
 !types/*.go
 
 !routes/
+!routes/**
 !routes/*.go
 
 !enums/
