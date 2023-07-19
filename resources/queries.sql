@@ -338,8 +338,87 @@ VALUES
 INSERT INTO
     external_data_sources.apis (id, is_secure, host, port, path, additional_headers)
 VALUES
-($1, $2, $3, $4, $5, $6);
+    ($1, $2, $3, $4, $5, $6);
 
 -- name: get-single-source
-SELECT * FROM external_data_sources.info
-WHERE id = $1::uuid OR name = $1::text;
+SELECT *
+FROM
+    external_data_sources.info
+WHERE
+     id = $1::uuid
+  OR name = $1::text;
+
+-- name: data-source-exists
+SELECT
+    EXISTS(SELECT
+               id
+           FROM
+               external_data_sources.info
+           WHERE
+               id = $1::uuid);
+
+-- name: set-base-data
+UPDATE external_data_sources.sources
+SET
+    name        = $2,
+    description = $3
+WHERE
+    id = $1;
+
+-- name: set-metadata
+UPDATE external_data_sources.metadata
+SET
+    reference                  = $2,
+    origin                     = $3,
+    distinctive_features       = $4,
+    usage_rights               = $5,
+    usage_duties               = $6,
+    real_entities              = $7,
+    local_expert               = $8,
+    external_documentation     = $9,
+    update_rate                = $10,
+    languages                  = $11,
+    billing                    = $12,
+    provisioning               = $13,
+    derived_from               = $14,
+    is_recent                  = $15,
+    validity                   = $16,
+    duplicates                 = $17,
+    errors                     = $18,
+    precision                  = $19,
+    reputation                 = $20,
+    objectivity                = $21,
+    usual_survey_method        = $22,
+    density                    = $23,
+    coverage                   = $24,
+    representation_consistency = $25,
+    logical_consistency        = $26,
+    delay                      = $27,
+    delay_information          = $28,
+    performancelimitations     = $29,
+    availability               = $30,
+    gdpr_compliant             = $31
+WHERE
+    id = $1::uuid;
+
+--name: set-api
+UPDATE external_data_sources.apis
+SET
+    is_secure          = $2,
+    host               = $3,
+    port               = $4,
+    path               = $5,
+    additional_headers = $6
+WHERE
+    id = $1::uuid;
+
+-- name: delete-datasource
+DELETE FROM
+           external_data_sources.sources
+WHERE id = $1::uuid;
+
+-- name: has-metadata
+SELECT EXISTS(
+    SELECT id FROM external_data_sources.metadata
+              WHERE id = $1::uuid
+);
