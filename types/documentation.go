@@ -32,8 +32,12 @@ func (d *Documentation) Scan(src interface{}) error {
 	if len(values) < 3 {
 		return errors.New("not enough items in object")
 	}
-	doc.Type = values[0]
-	doc.Location = values[1]
+	doc.Type = strings.ReplaceAll(values[0], `''`, `'`)
+	doc.Type = strings.ReplaceAll(doc.Type, `""`, `"`)
+	doc.Type = strings.ReplaceAll(doc.Type, `\"`, ``)
+	doc.Location = strings.ReplaceAll(values[1], `''`, `'`)
+	doc.Location = strings.ReplaceAll(doc.Location, `""`, `"`)
+	doc.Location = strings.ReplaceAll(doc.Location, `\"`, ``)
 	doc.Verbosity = enums.NoneHighRange(values[2])
 	*d = doc
 	return nil
@@ -41,7 +45,9 @@ func (d *Documentation) Scan(src interface{}) error {
 
 func (d *Documentation) Value() (driver.Value, error) {
 	escapedType := strings.ReplaceAll(d.Type, `'`, `''`)
-	escapedLocation := strings.ReplaceAll(d.Type, `'`, `''`)
+	escapedType = strings.ReplaceAll(escapedType, `"`, `""`)
+	escapedLocation := strings.ReplaceAll(d.Location, `'`, `''`)
+	escapedLocation = strings.ReplaceAll(escapedLocation, `"`, `""`)
 	return fmt.Sprintf("\"(%s,%s,%s)\"", escapedType, escapedLocation, d.Verbosity), nil
 }
 
@@ -61,14 +67,19 @@ func (d *Documentations) Scan(src interface{}) error {
 	var documentationElements Documentations
 	for _, entry := range entries {
 		var doc Documentation
-		regex := regexp.MustCompile(`^{*"*\(([^[:cntrl:],]+),([^[:cntrl:],]+),(none|low|medium|high)\)"*}*$`)
+		entry = strings.Trim(entry, `\{}/'"`)
+		regex := regexp.MustCompile(`^\(([^[:cntrl:],]+),([^[:cntrl:],]+),(none|low|medium|high)\)$`)
 		submatches := regex.FindStringSubmatch(entry)
 		values := submatches[1:]
 		if len(values) < 3 {
 			return errors.New("not enough items in object")
 		}
-		doc.Type = strings.Trim(values[0], ``)
-		doc.Location = values[1]
+		doc.Type = strings.ReplaceAll(values[0], `''`, `'`)
+		doc.Type = strings.ReplaceAll(doc.Type, `""`, `"`)
+		doc.Type = strings.ReplaceAll(doc.Type, `\"`, ``)
+		doc.Location = strings.ReplaceAll(values[1], `''`, `'`)
+		doc.Location = strings.ReplaceAll(doc.Location, `""`, `"`)
+		doc.Location = strings.ReplaceAll(doc.Location, `\"`, ``)
 		doc.Verbosity = enums.NoneHighRange(values[2])
 		documentationElements = append(documentationElements, doc)
 	}
