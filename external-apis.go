@@ -1,7 +1,7 @@
 package main
 
 import (
-	"external-api-service/routes"
+	managementRoutes "external-api-service/routes/management"
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
@@ -34,8 +34,7 @@ func main() {
 	router.Use(wisdomMiddleware.NativeErrorHandler(globals.ServiceName))
 	router.Use(wisdomMiddleware.WISdoMErrorHandler(globals.Errors))
 	// now mount the admin router
-	router.Get("/", routes.GetAllExternalAPIs)
-	router.Post("/", routes.NewExternalAPI)
+	router.Mount("/management", managementRouter())
 
 	// now boot up the service
 	// Configure the HTTP server
@@ -62,4 +61,12 @@ func main() {
 	// Block further code execution until the shutdown signal was received
 	<-cancelSignal
 
+}
+
+func managementRouter() http.Handler {
+	r := chi.NewRouter()
+	r.Get("/", managementRoutes.AllExternalDataSources)
+	r.Post("/", managementRoutes.NewDataSource)
+	r.Get("/{dataSourceUUID}", managementRoutes.SingleDataSource)
+	return r
 }
