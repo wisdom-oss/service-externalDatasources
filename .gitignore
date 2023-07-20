@@ -22,6 +22,7 @@
 !globals/*.go
 
 !types/
+!types/**
 !types/*.go
 
 !routes/

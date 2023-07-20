@@ -1,4 +1,4 @@
-package types
+package databaseTypes
 
 type Validity string
 
