@@ -9,15 +9,12 @@ import (
 // Metadata represents the metadata stored in the database for a single
 // datasource.
 // All fields are optional since the metadata of a datasource is
-// also optional. Furthermore, it does contain the ID of the datasource.
-// However, the ID will not be exported when marshaling it into json, due to
-// the encoding/json package not supporting having the same tag used twice and
-// ignoring them completely.
+// also optional.
+// Due to the way struct tags are handled by the packages used for marshaling,
+// unmarshalling and database scanning this [Metadata] type does not contain
+// the uuid of the datasource the metadata is associated with.
+// To also retrieve the data source uuid, please use [ExtendedMetadata]
 type Metadata struct {
-	// DatasourceID contains the uuid of the datasource the metadata is
-	//associated with
-	DatasourceID string `json:"-" db:"id"`
-
 	// Reference contains the topic of the data available in the datasource
 	// and if available
 	Reference *dbType.DataReference `json:"reference" db:"reference"`
@@ -135,4 +132,16 @@ type Metadata struct {
 	// GDPRCompliant shows if the datasource is GDPR-compliant and data
 	// pulled from the datasource may be used without any limitations
 	GDPRCompliant *bool `json:"gdprCompliant" db:"gdpr_compliant"`
+}
+
+// ExtendedMetadata extends the already known metadata object by the data source
+// uuid this metadata relates to.
+type ExtendedMetadata struct {
+	// DatasourceID contains the uuid of the datasource the metadata is
+	//associated with
+	DatasourceID string `json:"id" db:"id"`
+
+	// Metadata extends the ExtendedMetadata by all fields usually present in
+	// the metadata
+	Metadata
 }
