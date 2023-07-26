@@ -70,5 +70,17 @@
     "title": "No Datasource Found",
     "description": "the uuid or name provided in the url does not match any known data source",
     "httpCode": 404
+  },
+  {
+    "code": "NO_API_CONFIGURED",
+    "title": "No API Configured",
+    "description": "the uuid provided in the url points to a data source without a api configured",
+    "httpCode": 409
+  },
+  {
+    "code": "STORED_API_CONFIGURATION_INVALID",
+    "title": "API Configuration Invalid",
+    "description": "the api configuration stored in the database is not usable",
+    "httpCode": 503
   }
 ]

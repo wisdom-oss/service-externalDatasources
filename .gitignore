@@ -32,6 +32,10 @@
 !enums/
 !enums/*.go
 
+!proxy/
+!proxy/**
+!proxy/*.go
+
 # Allow package mamangement files for golang
 !go.mod
 !go.sum

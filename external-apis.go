@@ -1,6 +1,7 @@
 package main
 
 import (
+	"external-api-service/routes"
 	managementRoutes "external-api-service/routes/management"
 	"fmt"
 	"github.com/go-chi/chi/v5"
@@ -35,6 +36,7 @@ func main() {
 	router.Use(wisdomMiddleware.WISdoMErrorHandler(globals.Errors))
 	// now mount the admin router
 	router.Mount("/management", managementRouter())
+	router.HandleFunc("/{datasourceUUID}/*", routes.ProxySwitch)
 
 	// now boot up the service
 	// Configure the HTTP server

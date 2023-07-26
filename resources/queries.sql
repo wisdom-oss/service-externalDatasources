@@ -422,3 +422,16 @@ SELECT EXISTS(
     SELECT id FROM external_data_sources.metadata
               WHERE id = $1::uuid
 );
+
+-- name: get-api
+SELECT * FROM external_data_sources.apis WHERE id = $1::uuid;
+
+-- name: has-transformations
+SELECT EXISTS(
+    SELECT datasource FROM external_data_sources.transformations
+    WHERE datasource = $1::uuid
+);
+
+-- name: get-transformations-for-ds
+SELECT * FROM external_data_sources.transformations
+WHERE datasource = $1::uuid;
