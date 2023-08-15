@@ -31,6 +31,8 @@ type TransformationDefinition struct {
 // TransformationFunction
 var transformationFunctions = map[enums.TransformationType]interfaces.TransformationFunction{
 	enums.TRANSFORM_SORT_QUERY_PARAMETERS: transformations.SortQueryParameter{},
+	enums.TRANSFORM_ADD_QUERY_PARAMETERS:  transformations.AddQueryParameters{},
+	enums.TRANSFORM_SET_QUERY_PARAMETERS:  transformations.SortQueryParameter{},
 }
 
 // ApplyBefore gets the struct mapped to the transformation type and runs the Apply
@@ -39,7 +41,7 @@ func (td TransformationDefinition) ApplyBefore(r *http.Request) error {
 	// get the struct implementing the apply function
 	targetStruct, ok := transformationFunctions[td.Action]
 	if !ok {
-		return fmt.Errorf("no struct mapped implementing 'Apply()' to %s", td.Action)
+		return fmt.Errorf("no struct mapped implementing 'ApplyBefore()' to %s", td.Action)
 	}
 	return targetStruct.ApplyBefore(r, td.Data)
 }
@@ -50,7 +52,7 @@ func (td TransformationDefinition) ApplyAfter(r *http.Response) error {
 	// get the struct implementing the apply function
 	targetStruct, ok := transformationFunctions[td.Action]
 	if !ok {
-		return fmt.Errorf("no struct mapped implementing 'Apply()' to %s", td.Action)
+		return fmt.Errorf("no struct mapped implementing 'ApplyAfter()' to %s", td.Action)
 	}
 	return targetStruct.ApplyAfter(r, td.Data)
 }
