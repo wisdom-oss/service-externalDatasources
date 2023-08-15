@@ -36,6 +36,14 @@
 !proxy/**
 !proxy/*.go
 
+!interfaces/
+!interfaces/**
+!interfaces/*.go
+
+!transformations/
+!transformations/**
+!transformations/*.go
+
 # Allow package mamangement files for golang
 !go.mod
 !go.sum
