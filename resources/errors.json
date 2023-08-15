@@ -82,5 +82,11 @@
     "title": "API Configuration Invalid",
     "description": "the api configuration stored in the database is not usable",
     "httpCode": 503
+  },
+  {
+    "code": "UNABLE_TO_DETERMINE_PROXY_MODE",
+    "title": "Unable to Determine Proxy Mode",
+    "description": "the system was unable to determine the proxy mode for the data source",
+    "httpCode": 500
   }
 ]
