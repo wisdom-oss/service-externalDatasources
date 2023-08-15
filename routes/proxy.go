@@ -3,6 +3,7 @@ package routes
 import (
 	"database/sql"
 	"errors"
+	"external-api-service/enums"
 	"external-api-service/globals"
 	"external-api-service/types"
 	"fmt"
@@ -157,6 +158,53 @@ func ProxySwitch(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// now get the transformations from the database
+	transformationRows, err := globals.SqlQueries.Query(globals.Db, "get-transformations-for-ds", uuid)
+	if err != nil {
+		nativeErrorChannel <- err
+		<-nativeErrorHandled
+		return
+	}
+	// parse the available transformations
+	var transformations []types.TransformationDefinition
+	err = scan.Rows(&transformations, transformationRows)
+
+	// now set the proxy mode and assume a simple proxy and split the
+	// transformations into the appropriate categories
+	var preRequestTransformations, postRequestTransformations []types.TransformationDefinition
+	proxyMode := enums.PROXY_SIMPLE
+	for _, transformation := range transformations {
+		// unset the simple proxy since at least one transformation is set
+		proxyMode = proxyMode &^ enums.PROXY_SIMPLE
+		if transformation.Action.IsPre() {
+			proxyMode = proxyMode | enums.PROXY_TRANSFORM_REQUEST
+			preRequestTransformations = append(preRequestTransformations, transformation)
+		}
+		if transformation.Action.IsPost() {
+			proxyMode = proxyMode | enums.PROXY_TRANSFORM_RESPONSE
+			postRequestTransformations = append(postRequestTransformations, transformation)
+		}
+	}
+
+	// this checks if the proxy mode is not zero
+	if proxyMode == 0 {
+		wisdomErrorChannel <- "UNABLE_TO_DETERMINE_PROXY_MODE"
+		<-wisdomErrorHandled
+		return
+	}
+
+	// now execute the pre-request transformations if needed
+	if proxyMode&enums.PROXY_TRANSFORM_REQUEST != 0 {
+		for _, tf := range preRequestTransformations {
+			err = tf.ApplyBefore(request)
+			if err != nil {
+				nativeErrorChannel <- err
+				<-nativeErrorHandled
+				return
+			}
+		}
+	}
+
 	requestStart := time.Now()
 	res, err := globals.HttpClient.Do(request)
 	if err != nil {
@@ -175,6 +223,18 @@ func ProxySwitch(w http.ResponseWriter, r *http.Request) {
 	// proxy stream back
 	contentType := res.Header.Get("Content-Type")
 	w.Header().Set("Content-Type", contentType)
+
+	// now execute the post-request transformations if needed
+	if proxyMode&enums.PROXY_TRANSFORM_RESPONSE != 0 {
+		for _, tf := range postRequestTransformations {
+			err = tf.ApplyAfter(res)
+			if err != nil {
+				nativeErrorChannel <- err
+				<-nativeErrorHandled
+				return
+			}
+		}
+	}
 
 	// now copy the response from the datasource to the writer
 	_, err = io.Copy(w, res.Body)
