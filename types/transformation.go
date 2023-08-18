@@ -33,6 +33,7 @@ var transformationFunctions = map[enums.TransformationType]interfaces.Transforma
 	enums.TRANSFORM_SORT_QUERY_PARAMETERS: transformations.SortQueryParameter{},
 	enums.TRANSFORM_ADD_QUERY_PARAMETERS:  transformations.AddQueryParameters{},
 	enums.TRANSFORM_SET_QUERY_PARAMETERS:  transformations.SortQueryParameter{},
+	enums.TRANSFORM_EXTERNAL:              transformations.ExternalTransformation{},
 }
 
 // ApplyBefore gets the struct mapped to the transformation type and runs the Apply
