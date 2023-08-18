@@ -435,3 +435,8 @@ SELECT EXISTS(
 -- name: get-transformations-for-ds
 SELECT * FROM external_data_sources.transformations
 WHERE datasource = $1::uuid;
+
+-- name: get-transformation-script
+SELECT *
+FROM external_data_sources.scripts
+WHERE id = $1::uuid;
