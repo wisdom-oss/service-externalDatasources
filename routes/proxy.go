@@ -195,14 +195,23 @@ func ProxySwitch(w http.ResponseWriter, r *http.Request) {
 
 	// now execute the pre-request transformations if needed
 	if proxyMode&enums.PROXY_TRANSFORM_REQUEST != 0 {
+		totalPreProxyTransformationStart := time.Now()
 		for _, tf := range preRequestTransformations {
+			preProxyTransformationStart := time.Now()
 			err = tf.ApplyBefore(request)
 			if err != nil {
 				nativeErrorChannel <- err
 				<-nativeErrorHandled
 				return
 			}
+			preProxyTransformationDuration := time.Since(preProxyTransformationStart)
+			timingValue := fmt.Sprintf("preProxyTransformation-%s;dur=%f", tf.Action, preProxyTransformationDuration.Seconds())
+			w.Header().Add("Server-Timing", timingValue)
 		}
+		totalPreProxyTransformationDuration := time.Since(totalPreProxyTransformationStart)
+		timingValue := fmt.Sprintf("preProxyTransformations;dur=%f", totalPreProxyTransformationDuration.Seconds())
+		w.Header().Add("Server-Timing", timingValue)
+
 	}
 
 	requestStart := time.Now()
@@ -219,22 +228,28 @@ func ProxySwitch(w http.ResponseWriter, r *http.Request) {
 	// now set the request duration as header
 	w.Header().Add("Server-Timing", serverTimingValue)
 
-	// retrieve the content type header from the response and set it in the
-	// proxy stream back
-	contentType := res.Header.Get("Content-Type")
-	w.Header().Set("Content-Type", contentType)
-
 	// now execute the post-request transformations if needed
 	if proxyMode&enums.PROXY_TRANSFORM_RESPONSE != 0 {
+		transformationStart := time.Now()
 		for _, tf := range postRequestTransformations {
+			singleTransformationStart := time.Now()
 			err = tf.ApplyAfter(res)
 			if err != nil {
 				nativeErrorChannel <- err
 				<-nativeErrorHandled
 				return
 			}
+			singleTransformationDuration := time.Since(singleTransformationStart)
+			w.Header().Add("Server-Timing", fmt.Sprintf("postProxyTransformation-%s;dur=%f",
+				tf.Action, singleTransformationDuration.Seconds()))
+
 		}
+		totalTransformationTime := time.Since(transformationStart)
+		w.Header().Add("Server-Timing", fmt.Sprintf("postProxyTransformations;dur=%f",
+			totalTransformationTime.Seconds()))
 	}
+	// now set the content type to the response headers
+	w.Header().Set("Content-Type", res.Header.Get("Content-Type"))
 
 	// now copy the response from the datasource to the writer
 	_, err = io.Copy(w, res.Body)
