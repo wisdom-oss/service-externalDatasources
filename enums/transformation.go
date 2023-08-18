@@ -10,6 +10,7 @@ const (
 	TRANSFORM_SORT_QUERY_PARAMETERS TransformationType = "sortQueryParameters"
 	TRANSFORM_SET_QUERY_PARAMETERS  TransformationType = "setQueryParameters"
 	TRANSFORM_ADD_QUERY_PARAMETERS  TransformationType = "addQueryParameters"
+	TRANSFORM_EXTERNAL              TransformationType = "external"
 )
 
 // preRequestTransformations contains all transformations that will happen
@@ -22,7 +23,9 @@ var preRequestTransformations = []TransformationType{
 
 // postRequestTransformations contains all transformations that will happen
 // after sending the request to the target
-var postRequestTransformations = []TransformationType{}
+var postRequestTransformations = []TransformationType{
+	TRANSFORM_EXTERNAL,
+}
 
 // IsPre checks if the [TransformationType] is to be executed before the request
 // gets sent to its destination
