@@ -79,21 +79,27 @@ func (et ExternalTransformation) ApplyAfter(r *http.Response, data []byte) error
 	// now check for possibly required packages and install them
 	var errorOutput strings.Builder
 	if script.RequiredPackages != nil && len(script.RequiredPackages) > 0 {
-		switch script.Engine {
-		case "python":
-			for _, requiredPackage := range script.RequiredPackages {
-				requirementsInstall := exec.Command(
+		for _, requiredPackage := range script.RequiredPackages {
+			var installCommand *exec.Cmd
+			switch script.Engine {
+			case "python":
+				installCommand = exec.Command(
 					"python", "-m", "pip", "install", requiredPackage,
 				)
-				requirementsInstall.Stdout = os.Stdout
-				requirementsInstall.Stderr = &errorOutput
-				err = requirementsInstall.Run()
-				if err != nil {
-					return fmt.Errorf("unable to install configured requirements: %s", errorOutput.String())
-				}
-				errorOutput.Reset()
-			}
+			case "rscript":
+				command := fmt.Sprintf(`install.packages("%s")`, requiredPackage)
+				installCommand = exec.Command(
+					"rscript", "-e", command,
+				)
 
+			}
+			installCommand.Stdout = os.Stdout
+			installCommand.Stderr = &errorOutput
+			err = installCommand.Run()
+			if err != nil {
+				return fmt.Errorf("unable to install configured requirements: %s", errorOutput.String())
+			}
+			errorOutput.Reset()
 		}
 	}
 
