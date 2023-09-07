@@ -1,6 +1,8 @@
 # Ingore every file in this repository and explicitly whitelist
 # the files that should be inluded.
 *
+# Allow the dockerfile
+!Dockerfile
 
 # Allow the readme and gitignore files
 !README.md
