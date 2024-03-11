@@ -1,19 +1,23 @@
 package routes
 
 import (
-	"database/sql"
-	"errors"
-	"external-api-service/enums"
-	"external-api-service/globals"
-	"external-api-service/types"
 	"fmt"
-	"github.com/blockloop/scan/v2"
-	"github.com/go-chi/chi/v5"
 	"io"
 	"net/http"
-	"regexp"
-	"strings"
+	"path"
+	"reflect"
 	"time"
+
+	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	wisdomMiddleware "github.com/wisdom-oss/microservice-middlewares/v4"
+
+	"external-api-service/enums"
+	"external-api-service/globals"
+	"external-api-service/interfaces"
+	"external-api-service/transformations"
+	"external-api-service/types"
 )
 
 // ProxySwitch is the first handler for a new proxy request.
@@ -23,239 +27,198 @@ import (
 // uses the appropriate request function to proxy the request.
 func ProxySwitch(w http.ResponseWriter, r *http.Request) {
 	// get the error handlers from the request context
-	nativeErrorChannel := r.Context().Value("nativeErrorChannel").(chan error)
-	nativeErrorHandled := r.Context().Value("nativeErrorHandled").(chan bool)
-	wisdomErrorChannel := r.Context().Value("wisdomErrorChannel").(chan string)
-	wisdomErrorHandled := r.Context().Value("wisdomErrorHandled").(chan bool)
+	errorHandler := r.Context().Value(wisdomMiddleware.ErrorChannelName).(chan<- interface{})
+	statusChannel := r.Context().Value(wisdomMiddleware.StatusChannelName).(<-chan bool)
 
 	// now extract the data source id from the url
 	uuid := chi.URLParam(r, "datasourceUUID")
-
-	// now check if the uuid matches a configured data source
-	regex := regexp.MustCompile(`^[[:xdigit:]]{8}-?[[:xdigit:]]{4}-?[[:xdigit:]]{4}-?[[:xdigit:]]{4}-?[[:xdigit:]]{12}$`)
-	if !regex.MatchString(uuid) {
-		wisdomErrorChannel <- "INVALID_UUID_FORMAT"
-		<-wisdomErrorHandled
-		return
-	}
-
-	// since the uuid is valid now query the database if the datasource exists
-	result, err := globals.SqlQueries.Query(globals.Db, "data-source-exists", uuid)
+	datasourceID := pgtype.UUID{}
+	err := datasourceID.Scan(uuid)
 	if err != nil {
-		nativeErrorChannel <- err
-		<-nativeErrorHandled
+		errorHandler <- ErrInvalidUUID
+		<-statusChannel
 		return
 	}
 
-	// now parse the result into a boolean and check if at least one row was
-	// returned
-	var datasourceFound bool
-	err = scan.Row(&datasourceFound, result)
-	if errors.As(err, &sql.ErrNoRows) || !datasourceFound {
-		wisdomErrorChannel <- "NO_DATASOURCE_FOUND"
-		<-wisdomErrorHandled
-		return
-	}
+	query, err := globals.SqlQueries.Raw("data-source-exists")
 	if err != nil {
-		nativeErrorChannel <- err
-		<-nativeErrorHandled
+		errorHandler <- err
+		<-statusChannel
 		return
 	}
 
-	// now get the api configuration from the database
-	apiRow, err := globals.SqlQueries.Query(globals.Db, "get-api", uuid)
+	var datasourceExists []bool
+	err = pgxscan.Select(r.Context(), globals.Db, &datasourceExists, query, datasourceID)
 	if err != nil {
-		nativeErrorChannel <- err
-		<-nativeErrorHandled
+		errorHandler <- err
+		<-statusChannel
 		return
 	}
 
-	// now try to parse the result into the api configuration
+	if datasourceExists == nil || !datasourceExists[0] {
+		errorHandler <- ErrDatasourceNotFound
+		<-statusChannel
+		return
+	}
+
+	query, err = globals.SqlQueries.Raw("get-api")
+	if err != nil {
+		errorHandler <- err
+		<-statusChannel
+		return
+	}
+
 	var apiConfiguration types.API
-	err = scan.Row(&apiConfiguration, apiRow)
-	if errors.As(err, &sql.ErrNoRows) {
-		// there is no api configuration for this datasource
-		wisdomErrorChannel <- "NO_API_CONFIGURED"
-		<-wisdomErrorHandled
-		return
-	}
+	err = pgxscan.Get(r.Context(), globals.Db, &apiConfiguration, query, datasourceID)
 	if err != nil {
-		nativeErrorChannel <- err
-		<-nativeErrorHandled
+		errorHandler <- err
+		<-statusChannel
 		return
 	}
 
-	// now check if the api configuration is usable
-	if !apiConfiguration.IsValid() {
-		wisdomErrorChannel <- "STORED_API_CONFIGURATION_INVALID"
-		<-wisdomErrorHandled
+	if !apiConfiguration.Valid() {
+		errorHandler <- ErrInvalidDatasourceAPI
+		<-statusChannel
 		return
 	}
 
-	// now build the uri parts according to the configuration
-	var uriSchema, host, path string
-	var port uint16
+	var (
+		scheme            = "https://"
+		serverPath        = "/"
+		port       uint16 = 443
+	)
 
-	switch *apiConfiguration.IsSecure {
-	case true:
-		uriSchema = "https://"
+	if apiConfiguration.IsSecure == nil || *apiConfiguration.IsSecure {
+		scheme = "https://"
 		port = 443
-		break
-	case false:
-		uriSchema = "http://"
-		port = 80
-	default:
-		uriSchema = "https://"
-		port = 443
-		break
-	}
-	// since the host is the only required field, it may be set directly
-	host = *apiConfiguration.Host
-
-	// since the path is optional check before setting it from the configuration
-	if apiConfiguration.Path != nil {
-		path = strings.TrimPrefix(*apiConfiguration.Path, `/`)
 	} else {
-		path = ""
+		scheme = "http://"
+		port = 80
 	}
 
-	// the same with the port
 	if apiConfiguration.Port != nil {
 		port = *apiConfiguration.Port
 	}
 
-	// now get the path that has been requested via the incoming url and will
-	// be added to the api configuration
+	if apiConfiguration.Path != nil {
+		serverPath = *apiConfiguration.Path
+	}
+
 	extraPath := chi.URLParam(r, "*")
 
-	// now build the uri for the request to the data source
-	uri := fmt.Sprintf("%s%s:%d/%s/%s", uriSchema, host, port, path, extraPath)
+	requestPath := serverPath + extraPath
+	requestPath = path.Clean(requestPath)
 
-	// now build the request using the same verb used to access the service
-	// and reusing the request body
-	request, err := http.NewRequest(r.Method, uri, r.Body)
+	uri := fmt.Sprintf("%s%s:%d%s", scheme, *apiConfiguration.Host, port, requestPath)
+	proxyRequest, err := http.NewRequest(r.Method, uri, r.Body)
 	if err != nil {
-		nativeErrorChannel <- err
-		<-nativeErrorHandled
+		errorHandler <- err
+		<-statusChannel
 		return
 	}
 
-	// now extract the query parameters
-	queryParameters := request.URL.Query()
-	// now copy the query parameters from the incoming request to the outgoing
-	for parameter, values := range r.URL.Query() {
-		for _, value := range values {
-			queryParameters.Add(parameter, value)
-		}
-	}
-	request.URL.RawQuery = queryParameters.Encode()
+	// set some headers for proxy requests to allow the identification of the
+	// request's origin
+	proxyRequest.Header.Set("X-Forwarded-Host", r.Host)
+	proxyRequest.Header.Set("X-Forwarded-Proto", r.URL.Scheme)
+	proxyRequest.Header.Set("X-Forwarded-For", r.RemoteAddr)
+	proxyRequest.Header.Set("X-Real-IP", r.RemoteAddr)
 
-	// now check if there are any additional headers to be set and add them
-	// if needed.
-	if apiConfiguration.AdditionalHeaders != nil {
-		for _, header := range *apiConfiguration.AdditionalHeaders {
-			request.Header.Add(header.X, header.Y)
-		}
-	}
-
-	// now get the transformations from the database
-	transformationRows, err := globals.SqlQueries.Query(globals.Db, "get-transformations-for-ds", uuid)
+	// now check if any pre-request transformations are configured
+	query, err = globals.SqlQueries.Raw("get-transformations-for-ds")
 	if err != nil {
-		nativeErrorChannel <- err
-		<-nativeErrorHandled
-		return
-	}
-	// parse the available transformations
-	var transformations []types.TransformationDefinition
-	err = scan.Rows(&transformations, transformationRows)
-
-	// now set the proxy mode and assume a simple proxy and split the
-	// transformations into the appropriate categories
-	var preRequestTransformations, postRequestTransformations []types.TransformationDefinition
-	proxyMode := enums.PROXY_SIMPLE
-	for _, transformation := range transformations {
-		// unset the simple proxy since at least one transformation is set
-		proxyMode = proxyMode &^ enums.PROXY_SIMPLE
-		if transformation.Action.IsPre() {
-			proxyMode = proxyMode | enums.PROXY_TRANSFORM_REQUEST
-			preRequestTransformations = append(preRequestTransformations, transformation)
-		}
-		if transformation.Action.IsPost() {
-			proxyMode = proxyMode | enums.PROXY_TRANSFORM_RESPONSE
-			postRequestTransformations = append(postRequestTransformations, transformation)
-		}
-	}
-
-	// this checks if the proxy mode is not zero
-	if proxyMode == 0 {
-		wisdomErrorChannel <- "UNABLE_TO_DETERMINE_PROXY_MODE"
-		<-wisdomErrorHandled
+		errorHandler <- err
+		<-statusChannel
 		return
 	}
 
-	// now execute the pre-request transformations if needed
-	if proxyMode&enums.PROXY_TRANSFORM_REQUEST != 0 {
-		totalPreProxyTransformationStart := time.Now()
-		for _, tf := range preRequestTransformations {
-			preProxyTransformationStart := time.Now()
-			err = tf.ApplyBefore(request)
+	var transformationConfigurations []types.TransformationConfiguration
+	err = pgxscan.Select(r.Context(), globals.Db, &transformationConfigurations, query, datasourceID)
+	if err != nil {
+		errorHandler <- err
+		<-statusChannel
+		return
+	}
+
+	var preProxyTransformations map[string]map[string]interface{}
+	preProxyInterface := reflect.TypeOf((*interfaces.PreProxyTransformation)(nil)).Elem()
+	for _, transformationConfiguration := range transformationConfigurations {
+		transformation := transformations.GetTransformation(transformationConfiguration.Action.String)
+		if reflect.TypeOf(transformation).Implements(preProxyInterface) {
+			preProxyTransformations[transformationConfiguration.Action.String] = transformationConfiguration.Options
+		}
+	}
+
+	var postProxyTransformations map[string]map[string]interface{}
+	postProxyInterface := reflect.TypeOf((*interfaces.PostProxyTransformation)(nil)).Elem()
+	for _, transformationConfiguration := range transformationConfigurations {
+		transformation := transformations.GetTransformation(transformationConfiguration.Action.String)
+		if reflect.TypeOf(transformation).Implements(postProxyInterface) {
+			postProxyTransformations[transformationConfiguration.Action.String] = transformationConfiguration.Options
+		}
+	}
+
+	proxyMode := enums.SimpleProxy
+	if len(preProxyTransformations) > 0 {
+		proxyMode |= enums.TransformRequest
+	}
+	if len(postProxyTransformations) > 0 {
+		proxyMode |= enums.TransformResponse
+	}
+
+	if proxyMode&enums.TransformRequest != 0 {
+		requestTransformationStart := time.Now()
+		for transformationKey, transformationOptions := range preProxyTransformations {
+			transformation := transformations.GetTransformation(transformationKey).(interfaces.PreProxyTransformation)
+			err = transformation.ApplyBefore(r, transformationOptions)
 			if err != nil {
-				nativeErrorChannel <- err
-				<-nativeErrorHandled
+				errorHandler <- err
+				<-statusChannel
 				return
 			}
-			preProxyTransformationDuration := time.Since(preProxyTransformationStart)
-			timingValue := fmt.Sprintf("preProxyTransformation-%s;dur=%f", tf.Action, preProxyTransformationDuration.Seconds())
-			w.Header().Add("Server-Timing", timingValue)
 		}
-		totalPreProxyTransformationDuration := time.Since(totalPreProxyTransformationStart)
-		timingValue := fmt.Sprintf("preProxyTransformations;dur=%f", totalPreProxyTransformationDuration.Seconds())
-		w.Header().Add("Server-Timing", timingValue)
-
+		requestTransformationDuration := time.Since(requestTransformationStart)
+		timingHeaderValue := fmt.Sprintf("preProxyTransformations;dur=%f", requestTransformationDuration.Seconds())
+		w.Header().Add("Server-Timing", timingHeaderValue)
 	}
 
 	requestStart := time.Now()
-	res, err := globals.HttpClient.Do(request)
+	proxyResponse, err := globals.HttpClient.Do(proxyRequest)
 	if err != nil {
-		nativeErrorChannel <- err
-		<-nativeErrorHandled
+		errorHandler <- err
+		<-statusChannel
 		return
 	}
-	// now calculate the time that has passed between sending the request and
-	// completely getting a response
 	requestDuration := time.Since(requestStart)
-	serverTimingValue := fmt.Sprintf("remote;dur=%f", requestDuration.Seconds())
-	// now set the request duration as header
-	w.Header().Add("Server-Timing", serverTimingValue)
+	timingHeaderValue := fmt.Sprintf("proxyRequest;dur=%f", requestDuration.Seconds())
+	w.Header().Add("Server-Timing", timingHeaderValue)
 
-	// now execute the post-request transformations if needed
-	if proxyMode&enums.PROXY_TRANSFORM_RESPONSE != 0 {
-		transformationStart := time.Now()
-		for _, tf := range postRequestTransformations {
-			singleTransformationStart := time.Now()
-			err = tf.ApplyAfter(res)
+	if proxyMode&enums.TransformResponse != 0 {
+		responseTransformationStart := time.Now()
+		for transformationKey, transformationOptions := range postProxyTransformations {
+			transformation := transformations.GetTransformation(transformationKey).(interfaces.PostProxyTransformation)
+			err = transformation.ApplyAfter(proxyResponse, transformationOptions)
 			if err != nil {
-				nativeErrorChannel <- err
-				<-nativeErrorHandled
+				errorHandler <- err
+				<-statusChannel
 				return
 			}
-			singleTransformationDuration := time.Since(singleTransformationStart)
-			w.Header().Add("Server-Timing", fmt.Sprintf("postProxyTransformation-%s;dur=%f",
-				tf.Action, singleTransformationDuration.Seconds()))
-
 		}
-		totalTransformationTime := time.Since(transformationStart)
-		w.Header().Add("Server-Timing", fmt.Sprintf("postProxyTransformations;dur=%f",
-			totalTransformationTime.Seconds()))
+		responseTransformationDuration := time.Since(responseTransformationStart)
+		timingHeaderValue := fmt.Sprintf("postProxyTransformations;dur=%f", responseTransformationDuration.Seconds())
+		w.Header().Add("Server-Timing", timingHeaderValue)
 	}
-	// now set the content type to the response headers
-	w.Header().Set("Content-Type", res.Header.Get("Content-Type"))
 
-	// now copy the response from the datasource to the writer
-	_, err = io.Copy(w, res.Body)
+	for headerKey, headerValues := range proxyResponse.Header {
+		for _, headerValue := range headerValues {
+			w.Header().Add(headerKey, headerValue)
+		}
+	}
+
+	_, err = io.Copy(w, proxyResponse.Body)
 	if err != nil {
-		nativeErrorChannel <- err
-		<-nativeErrorHandled
+		errorHandler <- err
+		<-statusChannel
 		return
 	}
 }
