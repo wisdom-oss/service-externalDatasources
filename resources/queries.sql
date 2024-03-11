@@ -434,7 +434,8 @@ SELECT EXISTS(
 
 -- name: get-transformations-for-ds
 SELECT * FROM external_data_sources.transformations
-WHERE datasource = $1::uuid;
+WHERE datasource = $1::uuid
+ORDER BY priority;
 
 -- name: get-transformation-script
 SELECT *
