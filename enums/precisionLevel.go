@@ -1,38 +1,52 @@
 package enums
 
-import (
-	"errors"
-	"regexp"
-)
-
-type PrecisionLevel string
+// PrecisionLevel is a custom type defined as an unsigned 8-bit integer.
+// It is used to represent the precision level of data in a data source.
+type PrecisionLevel uint8
 
 const (
-	PRECISION_LEVEL_FINE      = "fine"
-	PRECISION_LEVEL_USUAL     = "usual"
-	PRECISION_LEVEL_UNUSUAL   = "unusual"
-	PRECISION_LEVEL_IMPRECISE = "imprecise"
+	PrecisionImprecise PrecisionLevel = iota + 1
+	PrecisionUnusual
+	PrecisionUsual
+	PrecisionFine
 )
 
-func (pl PrecisionLevel) String() string {
-	return string(pl)
+func (p PrecisionLevel) String() string {
+	switch p {
+	case PrecisionImprecise:
+		return "imprecise"
+	case PrecisionUnusual:
+		return "unusual"
+	case PrecisionUsual:
+		return "usual"
+	case PrecisionFine:
+		return "fine"
+	default:
+		return ""
+	}
 }
 
-func (pl *PrecisionLevel) Scan(src interface{}) error {
-	var rowString string
+func (p *PrecisionLevel) Parse(src interface{}) {
+	var precisionString string
 	switch src.(type) {
-	case []byte:
-		rowString = string(src.([]byte))
 	case string:
-		rowString = src.(string)
+		precisionString = src.(string)
+		break
+	case []byte:
+		precisionString = string(src.([]byte))
+		break
+	}
+
+	switch precisionString {
+	case "imprecise":
+		*p = PrecisionImprecise
+	case "unusual":
+		*p = PrecisionUnusual
+	case "usual":
+		*p = PrecisionUsual
+	case "fine":
+		*p = PrecisionFine
 	default:
-		return errors.New("unsupported scan input")
+		*p = 0
 	}
-	regex := regexp.MustCompile(`^(fine|usual|unusual|imprecise)$`)
-	matches := regex.FindStringSubmatch(rowString)
-	if len(matches) != 2 {
-		return errors.New("unsupported count of matches found")
-	}
-	*pl = PrecisionLevel(matches[1])
-	return nil
 }

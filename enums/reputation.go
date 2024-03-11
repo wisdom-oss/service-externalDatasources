@@ -1,38 +1,60 @@
 package enums
 
 import (
-	"errors"
-	"regexp"
+	"encoding/json"
+	"fmt"
+	"strings"
 )
 
-type Reputation string
+type Reputation uint16
 
 const (
-	REPUTATION_INDEPENDENT_AND_EXTERNAL = "independent_and_external"
-	REPUTATION_INDEPENDENT_OR_EXTERNAL  = "independent_or_external"
-	REPUTATION_SUSPECTED_HIGH           = "suspected_high"
-	REPUTATION_SUSPECTED_LOW            = "suspected_low"
+	Independent Reputation = 1 << iota
+	External
+	SuspectedLow
+	SuspectedHigh
 )
 
-func (r Reputation) String() string {
-	return string(r)
+func (r Reputation) String() (reputation string) {
+	if Independent&r != 0 {
+		reputation += fmt.Sprintf("%s,", "independent")
+	}
+	if External&r != 0 {
+		reputation += fmt.Sprintf("%s,", "external")
+	}
+	if SuspectedLow&r != 0 {
+		reputation += fmt.Sprintf("%s,", "suspectedLow")
+	}
+	if SuspectedHigh&r != 0 {
+		reputation += fmt.Sprintf("%s,", "suspectedHigh")
+	}
+	return strings.Trim(reputation, `,`)
 }
 
-func (r *Reputation) Scan(src interface{}) error {
-	var rowString string
-	switch src.(type) {
-	case []byte:
-		rowString = string(src.([]byte))
-	case string:
-		rowString = src.(string)
-	default:
-		return errors.New("unsupported scan input")
+func (r Reputation) MarshalJSON() ([]byte, error) {
+	reputation := r.String()
+	return json.Marshal(strings.Split(reputation, `,`))
+}
+
+func (r *Reputation) UnmarshalJSON(src []byte) error {
+	var reputationSlice []string
+	err := json.Unmarshal(src, &reputationSlice)
+	if err != nil {
+		return err
 	}
-	regex := regexp.MustCompile(`^(independent_and_external|independent_or_external|suspected_high|suspected_low)$`)
-	matches := regex.FindStringSubmatch(rowString)
-	if len(matches) != 2 {
-		return errors.New("unsupported count of matches found")
+	var reputation Reputation
+	for _, rep := range reputationSlice {
+		switch rep {
+		case "independent":
+			reputation |= Independent
+		case "external":
+			reputation |= External
+		case "suspectedLow":
+			reputation |= SuspectedLow
+		case "suspectedHigh":
+			reputation |= SuspectedHigh
+		}
 	}
-	*r = Reputation(matches[1])
+	*r = reputation
 	return nil
 }

@@ -1,38 +1,55 @@
 package enums
 
 import (
-	"errors"
-	"regexp"
+	"encoding/json"
+	"fmt"
 )
 
-type NoneHighRange string
+type NoneHighRange int8
 
 const (
-	RANGE_NONE   NoneHighRange = "none"
-	RANGE_LOW    NoneHighRange = "low"
-	RANGE_MEDIUM NoneHighRange = "medium"
-	RANGE_HIGH   NoneHighRange = "high"
+	RangeNone NoneHighRange = iota
+	RangeLow
+	RangeMedium
+	RangeHigh
 )
 
-func (nhr NoneHighRange) String() string {
-	return string(nhr)
+func (r NoneHighRange) String() string {
+	switch r {
+	case RangeNone:
+		return "none"
+	case RangeLow:
+		return "low"
+	case RangeMedium:
+		return "medium"
+	case RangeHigh:
+		return "high"
+	default:
+		return ""
+	}
 }
 
-func (nhr *NoneHighRange) Scan(src interface{}) error {
-	var rowString string
-	switch src.(type) {
-	case []byte:
-		rowString = string(src.([]byte))
-	case string:
-		rowString = src.(string)
+func (r NoneHighRange) MarshalJSON() ([]byte, error) {
+	return json.Marshal(fmt.Sprintf("%s", r))
+}
+
+func (r *NoneHighRange) UnmarshalJSON(src []byte) error {
+	var str string
+	err := json.Unmarshal(src, &str)
+	if err != nil {
+		return err
+	}
+	switch str {
+	case "none":
+		*r = RangeNone
+	case "low":
+		*r = RangeLow
+	case "medium":
+		*r = RangeMedium
+	case "high":
+		*r = RangeHigh
 	default:
-		return errors.New("unsupported scan input")
+		*r = NoneHighRange(-1)
 	}
-	regex := regexp.MustCompile(`^(none|low|medium|high)$`)
-	matches := regex.FindStringSubmatch(rowString)
-	if len(matches) != 2 {
-		return errors.New("unexpected match count")
-	}
-	*nhr = NoneHighRange(matches[1])
 	return nil
 }

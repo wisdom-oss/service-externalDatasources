@@ -1,31 +1,57 @@
 package enums
 
 import (
-	"errors"
-	"regexp"
+	"encoding/json"
+	"fmt"
 )
 
-type DelayInformationTransmission string
+type DelayInformationTransmission int8
 
-func (dit DelayInformationTransmission) String() string {
-	return string(dit)
+const DelayTransmissionUnknown DelayInformationTransmission = -1
+
+const (
+	DelayTransmissionNone DelayInformationTransmission = iota
+	DelayTransmissionManual
+	DelayTransmissionAutomatic
+	DelayTransmissionDirect
+)
+
+func (t DelayInformationTransmission) String() string {
+	switch t {
+	case DelayTransmissionNone:
+		return "none"
+	case DelayTransmissionManual:
+		return "manual"
+	case DelayTransmissionAutomatic:
+		return "automatic"
+	case DelayTransmissionDirect:
+		return "direct"
+	default:
+		return ""
+	}
 }
 
-func (dit *DelayInformationTransmission) Scan(src interface{}) error {
-	var rowString string
-	switch src.(type) {
-	case []byte:
-		rowString = string(src.([]byte))
-	case string:
-		rowString = src.(string)
+func (t DelayInformationTransmission) MarshalJSON() ([]byte, error) {
+	return json.Marshal(fmt.Sprintf("%s", t))
+}
+
+func (t *DelayInformationTransmission) UnmarshalJSON(src []byte) error {
+	var str string
+	err := json.Unmarshal(src, &str)
+	if err != nil {
+		return err
+	}
+	switch str {
+	case "none":
+		*t = DelayTransmissionNone
+	case "manual":
+		*t = DelayTransmissionManual
+	case "automatic":
+		*t = DelayTransmissionAutomatic
+	case "direct":
+		*t = DelayTransmissionDirect
 	default:
-		return errors.New("unsupported scan input")
+		*t = DelayTransmissionUnknown
 	}
-	regex := regexp.MustCompile(`^(direct|automatic|manual|none)$`)
-	matches := regex.FindStringSubmatch(rowString)
-	if len(matches) != 2 {
-		return errors.New("unsupported count of matches found")
-	}
-	*dit = DelayInformationTransmission(matches[1])
 	return nil
 }
