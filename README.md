@@ -4,8 +4,7 @@
 <h3>external-datasources</h3>
 <p>⚙️ A microservice for managing external data sources and querying them</p>
 
-<img src="https://img.shields.io/github/go-mod/go-version/wisdom-oss/service-externalDatasources?style=for-the-badge" 
-alt="Go Lang Version"/>
+<img src="https://img.shields.io/github/go-mod/go-version/wisdom-oss/service-externalDatasources?style=for-the-badge" alt="Go Lang Version"/>
 <a href="openapi.yaml">
 <img src="https://img.shields.io/badge/Schema%20Version-3.0.0-6BA539?style=for-the-badge&logo=OpenAPI%20Initiative" alt="Open
 API Schema Version"/></a>
